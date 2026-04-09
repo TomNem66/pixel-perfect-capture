@@ -32,8 +32,6 @@ export function useAnalysis() {
       addToHistory({
         url: analysis.url,
         siteName: analysis.siteName,
-        score: analysis.scoreResult.total,
-        grade: analysis.scoreResult.grade,
         analyzedAt: analysis.analyzedAt,
       });
 
