@@ -1,5 +1,4 @@
-import { AnalysisResult, ExtractedData } from "@/types/analysis";
-import { calculateScore } from "./scoring";
+import { AnalysisResult } from "@/types/analysis";
 
 function extractDomain(url: string): string {
   try {
@@ -12,18 +11,17 @@ function extractDomain(url: string): string {
 function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash |= 0;
   }
   return Math.abs(hash);
 }
 
-function deterministicBool(hash: number, seed: number): boolean {
+function dBool(hash: number, seed: number): boolean {
   return ((hash * (seed + 1) * 13) % 100) > 40;
 }
 
-function deterministicChoice<T>(hash: number, seed: number, options: T[]): T {
+function dChoice<T>(hash: number, seed: number, options: T[]): T {
   return options[((hash * (seed + 1) * 7) % options.length)];
 }
 
@@ -31,115 +29,104 @@ export function generateMockAnalysis(url: string): AnalysisResult {
   const domain = extractDomain(url);
   const h = hashCode(domain);
 
-  const extractedData: ExtractedData = {
-    meta: {
-      shop_name: domain,
-      ico: deterministicBool(h, 1) ? "12345678" : null,
-      sidlo: deterministicBool(h, 2) ? "Praha 1, Hlavní 123" : null,
-      rejstrik: deterministicBool(h, 3) ? "C 12345, Městský soud v Praze" : null,
-      datum_ucinnosti_vop: deterministicBool(h, 4) ? "1.1.2024" : null,
-      nalezene_dokumenty: ["Obchodní podmínky", "Ochrana osobních údajů"],
-    },
-    odstoupeni: {
-      lhuta_dny: deterministicBool(h, 5) ? 14 : deterministicBool(h, 6) ? 30 : null,
-      postup_popsan: deterministicBool(h, 7),
-      formular_prilozen: deterministicBool(h, 8),
-      kdo_hradi_postovne_vraceni: deterministicChoice(h, 9, ["spotřebitel", "prodejce", "neuvedeno"]),
-      lhuta_vraceni_penez_dny: deterministicBool(h, 10) ? 14 : deterministicBool(h, 11) ? 30 : null,
-      sankce_za_odstoupeni: deterministicBool(h, 12) ? null : "Poplatek 200 Kč za zpracování vrácení",
-      vyjimky_uvedeny: deterministicBool(h, 13),
-      presna_citace: "\"Spotřebitel má právo odstoupit od smlouvy ve lhůtě 14 dnů od převzetí zboží bez udání důvodu.\"",
-    },
-    reklamace: {
-      reklamacni_lhuta_mesice: deterministicBool(h, 14) ? 24 : deterministicBool(h, 15) ? 12 : null,
-      postup_popsan: deterministicBool(h, 16),
-      lhuta_vyrizeni_dny: deterministicBool(h, 17) ? 30 : deterministicBool(h, 18) ? 45 : null,
-      prava_z_vadneho_plneni: deterministicBool(h, 19)
-        ? ["oprava", "výměna", "sleva", "odstoupení"]
-        : deterministicBool(h, 20) ? ["oprava", "výměna"] : [],
-      kontakt_pro_reklamaci: deterministicBool(h, 21),
-      neprimerene_podminky: deterministicBool(h, 22) ? null : "Reklamace pouze s původním obalem",
-      presna_citace: "\"Reklamaci lze uplatnit ve lhůtě 24 měsíců od převzetí zboží.\"",
-    },
-    gdpr: {
-      spravce_identifikovan: deterministicBool(h, 23),
-      ucel_zpracovani: deterministicBool(h, 24),
-      pravni_zaklad: deterministicBool(h, 25),
-      doba_uchovavani: deterministicBool(h, 26),
-      prava_subjektu: deterministicBool(h, 27),
-      cookies_reseny: deterministicBool(h, 28),
-    },
-    platby: {
-      zpusoby_platby_uvedeny: deterministicBool(h, 29),
-      ceny_vcetne_dph: deterministicBool(h, 30),
-      skryte_poplatky: deterministicBool(h, 31) ? "Příplatek za platbu kartou 2%" : null,
-      bezpecnost_plateb: deterministicBool(h, 32),
-    },
-    dodani: {
-      dodaci_lhuta_uvedena: deterministicBool(h, 33),
-      dodaci_lhuta_dny: deterministicBool(h, 34) ? 5 : deterministicBool(h, 35) ? 14 : null,
-      zpusoby_dopravy_uvedeny: deterministicBool(h, 36),
-      prechod_rizika_popsan: deterministicBool(h, 37),
-    },
-    spory: {
-      coi_uvedena: deterministicBool(h, 38),
-      mimosoudni_reseni_adr: deterministicBool(h, 39),
-      odr_platforma_odkaz: deterministicBool(h, 40),
-      kontakt_pro_stiznosti: deterministicBool(h, 41),
-    },
-    obecne: {
-      identifikace_kompletni: deterministicChoice(h, 42, ["kompletní", "částečná", "chybí"]),
-      srozumitelnost: deterministicChoice(h, 43, ["dobrá", "průměrná", "špatná"]),
-      informace_o_uzavreni_smlouvy: deterministicBool(h, 44),
-    },
-    red_flags: [],
-    bonusy: [],
-  };
+  const isMarketplace = dChoice(h, 50, ["přímý prodejce", "přímý prodejce", "zprostředkovatel", "neuvedeno"] as const);
+  const zeme = dChoice(h, 51, ["ČR", "ČR", "EU", "mimo EU"] as const);
+  const lhutaDny = dBool(h, 5) ? 14 : dBool(h, 6) ? 30 : null;
+  const kdoPlatí = dChoice(h, 9, ["zákazník", "e-shop", "neuvedeno"] as const);
+  const sankce = dBool(h, 12) ? null : "Poplatek 200 Kč za zpracování vrácení";
+  const reklamaceZahranici = zeme === "mimo EU" || dChoice(h, 60, [false, false, true]);
+  const dodaciLhuta = dBool(h, 34) ? 5 : dBool(h, 35) ? 45 : null;
+  const sankceNevyzvedni = dBool(h, 70) ? null : "Smluvní pokuta 500 Kč za nevyzvednutí dobírky";
+  const metody = dBool(h, 29)
+    ? ["platební karta", "bankovní převod", "dobírka", "Apple Pay"]
+    : ["platební karta", "bankovní převod"];
+  const maDobirku = metody.includes("dobírka");
 
-  if (extractedData.odstoupeni.sankce_za_odstoupeni) {
-    extractedData.red_flags.push({
-      typ: "Sankce za odstoupení",
-      zavaznost: "vysoká",
-      citace: extractedData.odstoupeni.sankce_za_odstoupeni,
-      duvod: "Spotřebitel nesmí být sankcionován za využití zákonného práva na odstoupení od smlouvy.",
-      zakonny_standard: "§ 1829 OZ – odstoupení bez sankce",
-    });
-  }
-  if (extractedData.reklamace.neprimerene_podminky) {
-    extractedData.red_flags.push({
-      typ: "Nepřiměřená podmínka reklamace",
-      zavaznost: "střední",
-      citace: extractedData.reklamace.neprimerene_podminky,
-      duvod: "Podmínka původního obalu omezuje zákonná práva spotřebitele z vadného plnění.",
-      zakonny_standard: "§ 2165 OZ – práva z vadného plnění nelze omezovat",
-    });
-  }
-  if (extractedData.platby.skryte_poplatky) {
-    extractedData.red_flags.push({
-      typ: "Skryté poplatky",
-      zavaznost: "střední",
-      citace: extractedData.platby.skryte_poplatky,
-      duvod: "Příplatky za běžné platební metody nejsou transparentní.",
-      zakonny_standard: "§ 1820 OZ – povinnost uvést celkovou cenu",
-    });
-  }
-
-  if (extractedData.odstoupeni.lhuta_dny != null && extractedData.odstoupeni.lhuta_dny > 14) {
-    extractedData.bonusy.push({ typ: "Prodloužená lhůta pro odstoupení", popis: `${extractedData.odstoupeni.lhuta_dny} dní místo zákonných 14` });
-  }
-  if (deterministicBool(h, 50)) {
-    extractedData.bonusy.push({ typ: "Doprava zdarma nad limit", popis: "Doprava zdarma při objednávce nad 1000 Kč" });
-  }
-
-  const scoreResult = calculateScore(extractedData);
-  const summary = `Obchodní podmínky ${domain} získaly hodnocení ${scoreResult.grade} (${scoreResult.total}/100). ${scoreResult.gradeText}.`;
-
-  return {
+  const result: AnalysisResult = {
     url,
     siteName: domain,
     analyzedAt: new Date().toISOString(),
-    extractedData,
-    scoreResult,
-    summary,
+
+    prodejce: {
+      nazev: domain,
+      ico: dBool(h, 1) ? "12345678" : null,
+      sidlo: dBool(h, 2) ? "Praha 1, Hlavní 123" : null,
+      zeme,
+      typ: isMarketplace,
+      zapis_or: dBool(h, 3) ? "C 12345, Městský soud v Praze" : null,
+    },
+
+    vraceni: {
+      lhuta_dny: lhutaDny,
+      kdo_plati_postovne: kdoPlatí,
+      vyjimky: dBool(h, 13) ? ["hygienické zboží", "software po otevření", "zboží na míru"] : [],
+      sankce,
+      lhuta_vraceni_penez_dny: dBool(h, 10) ? 14 : dBool(h, 11) ? 30 : null,
+    },
+
+    reklamace: {
+      zarucni_doba_mesice: dBool(h, 14) ? 24 : dBool(h, 15) ? 12 : null,
+      adresa_reklamace: dBool(h, 21) ? "Reklamační oddělení, Skladová 45, Praha 5" : null,
+      reklamace_v_zahranici: reklamaceZahranici,
+      sberne_misto_cr: reklamaceZahranici ? dBool(h, 61) : null,
+      hradi_dopravu_vadneho: dBool(h, 62) ? true : dBool(h, 63) ? false : null,
+      lhuta_vyrizeni_dny: dBool(h, 17) ? 30 : dBool(h, 18) ? 45 : null,
+      lhuta_vraceni_penez_dny: dBool(h, 64) ? 14 : null,
+    },
+
+    platby: {
+      metody,
+      ma_dobirku: maDobirku,
+      skryte_poplatky: dBool(h, 31) ? ["příplatek za platbu kartou 2%", "balné 29 Kč"] : [],
+      sankce_nevyzvedni: sankceNevyzvedni,
+      ceny_vcetne_dph: dBool(h, 30) ? true : dBool(h, 65) ? false : null,
+    },
+
+    doprava: {
+      dodaci_lhuta_dny: dodaciLhuta,
+      dodaci_lhuta_text: dodaciLhuta ? `Zboží expedujeme do ${dodaciLhuta} pracovních dní` : null,
+      zpusoby: dBool(h, 36) ? ["Zásilkovna", "PPL", "Česká pošta"] : ["PPL"],
+      odpovednost_poskozeni: dBool(h, 37) ? "Riziko přechází na kupujícího převzetím zásilky" : null,
+      sledovani_zasilky: dBool(h, 66) ? true : dBool(h, 67) ? false : null,
+    },
+
+    varovani: [],
+    bonusy: [],
   };
+
+  // Auto-generate warnings
+  if (zeme !== "ČR" && zeme !== "EU") {
+    result.varovani.push({ kategorie: "Prodejce", text: "Prodejce sídlí mimo EU – vaše spotřebitelská práva mohou být obtížně vymahatelná", zavaznost: "kritické" });
+  }
+  if (isMarketplace === "zprostředkovatel") {
+    result.varovani.push({ kategorie: "Prodejce", text: "Tento e-shop je zprostředkovatel (marketplace/dropshipping). Reklamace a vrácení zboží řešíte přímo s dodavatelem, kterým může být zahraniční firma.", zavaznost: "pozor" });
+  }
+  if (dodaciLhuta && dodaciLhuta > 30) {
+    result.varovani.push({ kategorie: "Doprava", text: `Dodací lhůta až ${dodaciLhuta} dní – typické pro dropshipping`, zavaznost: "pozor" });
+  }
+  if (sankceNevyzvedni) {
+    result.varovani.push({ kategorie: "Platby", text: `E-shop účtuje pokutu za nevyzvednutí dobírky: ${sankceNevyzvedni}`, zavaznost: "pozor" });
+  }
+  if (reklamaceZahranici) {
+    result.varovani.push({ kategorie: "Reklamace", text: "Reklamace se zasílá do zahraničí", zavaznost: "pozor" });
+  }
+  if (sankce) {
+    result.varovani.push({ kategorie: "Vrácení", text: `E-shop účtuje sankci za vrácení zboží: ${sankce}`, zavaznost: "kritické" });
+  }
+  if (result.platby.skryte_poplatky.length > 0) {
+    result.varovani.push({ kategorie: "Platby", text: `Skryté poplatky: ${result.platby.skryte_poplatky.join(", ")}`, zavaznost: "pozor" });
+  }
+
+  // Auto-generate bonuses
+  if (lhutaDny && lhutaDny > 14) {
+    result.bonusy.push({ kategorie: "Vrácení", text: `Prodloužená lhůta na vrácení – ${lhutaDny} dní místo zákonných 14` });
+  }
+  if (kdoPlatí === "e-shop") {
+    result.bonusy.push({ kategorie: "Vrácení", text: "Poštovné při vrácení hradí e-shop" });
+  }
+  if (result.reklamace.hradi_dopravu_vadneho === true) {
+    result.bonusy.push({ kategorie: "Reklamace", text: "E-shop hradí dopravu vadného zboží" });
+  }
+
+  return result;
 }
