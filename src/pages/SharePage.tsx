@@ -38,7 +38,7 @@ const SharePage = () => {
     <div className="min-h-screen bg-background">
       <ThemeToggle />
       <div className="container mx-auto px-4 py-8 md:py-16">
-        <ResultsDashboard result={result} onReset={() => navigate("/")} />
+        <ResultsDashboard result={result} onReset={() => navigate("/")} onReanalyze={undefined} />
       </div>
     </div>
   );
