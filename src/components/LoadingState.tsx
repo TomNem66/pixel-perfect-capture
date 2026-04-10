@@ -9,7 +9,7 @@ const steps = [
   { key: "fetching", label: "Stahování stránky", icon: Globe },
   { key: "parsing", label: "Parsování podmínek", icon: FileText },
   { key: "analyzing", label: "AI analýza obsahu", icon: Brain },
-  { key: "scoring", label: "Vyhodnocování skóre", icon: BarChart3 },
+  { key: "processing", label: "Zpracování výsledků", icon: BarChart3 },
 ];
 
 export const LoadingState = ({ currentStep }: LoadingStateProps) => {
