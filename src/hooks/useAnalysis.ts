@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { AnalysisResult } from "@/types/analysis";
+import { AnalysisResult, ShopCategory } from "@/types/analysis";
 import { generateMockAnalysis } from "@/lib/mockAnalysis";
 import { addToHistory } from "@/lib/history";
 
-type Step = "idle" | "fetching" | "parsing" | "analyzing" | "scoring" | "done" | "error";
+type Step = "idle" | "fetching" | "parsing" | "analyzing" | "processing" | "done" | "error";
 
 export function useAnalysis() {
   const [step, setStep] = useState<Step>("idle");
@@ -12,7 +12,7 @@ export function useAnalysis() {
 
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const analyze = useCallback(async (url: string) => {
+  const analyze = useCallback(async (url: string, forcedCategory?: ShopCategory) => {
     setError(null);
     setResult(null);
 
@@ -23,10 +23,10 @@ export function useAnalysis() {
       await delay(1000);
       setStep("analyzing");
       await delay(1500);
-      setStep("scoring");
+      setStep("processing");
       await delay(800);
 
-      const analysis = generateMockAnalysis(url);
+      const analysis = generateMockAnalysis(url, forcedCategory);
       setResult(analysis);
 
       addToHistory({

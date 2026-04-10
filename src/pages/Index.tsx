@@ -7,7 +7,7 @@ import { ManualUrlDialog } from "@/components/ManualUrlDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { getHistory } from "@/lib/history";
-import { HistoryItem } from "@/types/analysis";
+import { HistoryItem, ShopCategory } from "@/types/analysis";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +23,10 @@ const Index = () => {
 
   const handleAnalyze = (url: string) => {
     analyze(url).then(() => setHistory(getHistory()));
+  };
+
+  const handleReanalyze = (url: string, category: ShopCategory) => {
+    analyze(url, category).then(() => setHistory(getHistory()));
   };
 
   const handleManualSubmit = (termsUrl: string) => {
@@ -63,13 +67,7 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">{error}</p>
             <div className="flex gap-3 justify-center">
               <Button onClick={reset}>Zkusit znovu</Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFailedUrl("");
-                  setManualDialogOpen(true);
-                }}
-              >
+              <Button variant="outline" onClick={() => { setFailedUrl(""); setManualDialogOpen(true); }}>
                 Zadat URL podmínek ručně
               </Button>
             </div>
@@ -77,7 +75,7 @@ const Index = () => {
         )}
 
         {step === "done" && result && (
-          <ResultsDashboard result={result} onReset={reset} />
+          <ResultsDashboard result={result} onReset={reset} onReanalyze={handleReanalyze} />
         )}
       </div>
 
