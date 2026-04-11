@@ -21,8 +21,13 @@ const Index = () => {
     setHistory(getHistory());
   }, []);
 
-  const handleAnalyze = (url: string) => {
-    analyze(url).then(() => setHistory(getHistory()));
+  const handleAnalyze = async (url: string) => {
+    try {
+      await analyze(url);
+    } catch {
+      // handled by useAnalysis error state
+    }
+    setHistory(getHistory());
   };
 
   const handleReanalyze = (url: string, category: ShopCategory) => {
@@ -63,8 +68,14 @@ const Index = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
               <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            <h2 className="text-xl font-heading font-bold mb-2">Nastala chyba</h2>
-            <p className="text-muted-foreground mb-6">{error}</p>
+            <h2 className="text-xl font-heading font-bold mb-2">
+              {error === "vop_not_found" ? "Obchodní podmínky nenalezeny" : "Nastala chyba"}
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              {error === "vop_not_found"
+                ? "Nepodařilo se automaticky najít obchodní podmínky. Zkuste zadat URL podmínek ručně."
+                : error}
+            </p>
             <div className="flex gap-3 justify-center">
               <Button onClick={reset}>Zkusit znovu</Button>
               <Button variant="outline" onClick={() => { setFailedUrl(""); setManualDialogOpen(true); }}>

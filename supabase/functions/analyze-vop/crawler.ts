@@ -12,10 +12,10 @@ interface CrawlResult {
 }
 
 function stripHtml(html: string): string {
-  // Remove scripts, styles, and HTML tags
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, (match) => match) // keep nav for link discovery
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -25,7 +25,7 @@ function stripHtml(html: string): string {
     .replace(/&#039;/g, "'")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 50000); // Limit text size
+    .slice(0, 50000);
 }
 
 function extractBaseUrl(url: string): string {
@@ -45,15 +45,32 @@ function resolveUrl(base: string, href: string): string {
   }
 }
 
-// Patterns to find relevant pages in navigation/footer
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+
+const FETCH_HEADERS = {
+  "User-Agent": BROWSER_UA,
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  "Accept-Language": "cs-CZ,cs;q=0.9,en;q=0.5",
+  "Accept-Encoding": "identity",
+  "Cache-Control": "no-cache",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1",
+};
+
+// Patterns to find relevant pages
 const VOP_PATTERNS = [
-  /obchodni.podminky/i, /vop/i, /terms/i, /podminky.nakupu/i,
-  /podminky.uzivani/i, /terms.of.service/i, /obchodni-podminky/i,
+  /obchodni[\s-]?podminky/i, /vop/i, /terms/i, /podminky[\s-]?nakupu/i,
+  /podminky[\s-]?uzivani/i, /terms[\s-]?of[\s-]?service/i, /obchodni-podminky/i,
+  /vseobecne[\s-]?podminky/i, /conditions/i,
 ];
-const REKLAMACE_PATTERNS = [/reklamacni.rad/i, /reklamace/i, /complaints/i];
-const FAQ_PATTERNS = [/faq/i, /casto.kladene/i, /dotazy/i, /help/i, /napoveda/i];
-const PRIVACY_PATTERNS = [/ochrana.osobnich/i, /gdpr/i, /privacy/i, /soukromi/i, /zasady.ochrany/i];
-const KONTAKT_PATTERNS = [/kontakt/i, /contact/i, /o.nas/i, /about/i];
+const REKLAMACE_PATTERNS = [/reklamacni[\s-]?rad/i, /reklamace/i, /complaints/i, /warranty/i];
+const FAQ_PATTERNS = [/faq/i, /casto[\s-]?kladene/i, /dotazy/i, /help/i, /napoveda/i];
+const PRIVACY_PATTERNS = [/ochrana[\s-]?osobnich/i, /gdpr/i, /privacy/i, /soukromi/i, /zasady[\s-]?ochrany/i];
+const KONTAKT_PATTERNS = [/kontakt/i, /contact/i, /o[\s-]?nas/i, /about/i];
 
 function findLinks(html: string, baseUrl: string): { href: string; text: string }[] {
   const links: { href: string; text: string }[] = [];
@@ -62,16 +79,21 @@ function findLinks(html: string, baseUrl: string): { href: string; text: string 
   while ((match = regex.exec(html)) !== null) {
     const href = match[1];
     const text = match[2].replace(/<[^>]+>/g, "").trim();
-    if (href && text && !href.startsWith("#") && !href.startsWith("javascript:") && !href.startsWith("mailto:")) {
-      links.push({ href: resolveUrl(baseUrl, href), text });
+    if (href && !href.startsWith("#") && !href.startsWith("javascript:") && !href.startsWith("mailto:")) {
+      links.push({ href: resolveUrl(baseUrl, href), text: text || href });
     }
   }
   return links;
 }
 
 function matchLink(links: { href: string; text: string }[], patterns: RegExp[]): string | null {
+  // First try matching text, then href
   for (const pattern of patterns) {
-    const found = links.find((l) => pattern.test(l.text) || pattern.test(l.href));
+    const found = links.find((l) => pattern.test(l.text));
+    if (found) return found.href;
+  }
+  for (const pattern of patterns) {
+    const found = links.find((l) => pattern.test(l.href));
     if (found) return found.href;
   }
   return null;
@@ -83,24 +105,29 @@ async function fetchPage(url: string): Promise<CrawledPage | null> {
     const timeout = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; VOPatrne/1.0; +https://vopatrne.cz)",
-        Accept: "text/html",
-      },
+      headers: FETCH_HEADERS,
       signal: controller.signal,
+      redirect: "follow",
     });
     clearTimeout(timeout);
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn(`Page fetch failed: ${url} -> ${response.status}`);
+      return null;
+    }
     const html = await response.text();
-    return { url, text: stripHtml(html) };
-  } catch {
+    const text = stripHtml(html);
+    if (text.length < 100) return null;
+    return { url, text };
+  } catch (e) {
+    console.warn(`Page fetch error: ${url}`, e);
     return null;
   }
 }
 
 export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
   const baseUrl = extractBaseUrl(inputUrl);
+  const normalizedUrl = inputUrl.startsWith("http") ? inputUrl : `https://${inputUrl}`;
   const result: CrawlResult = {
     vop: null,
     reklamacni_rad: null,
@@ -109,33 +136,32 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
     kontakt: null,
   };
 
-  // Fetch homepage to discover links
+  // Fetch homepage
   let homepageHtml: string;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(baseUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; VOPatrne/1.0; +https://vopatrne.cz)",
-        Accept: "text/html",
-      },
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(normalizedUrl, {
+      headers: FETCH_HEADERS,
       signal: controller.signal,
+      redirect: "follow",
     });
     clearTimeout(timeout);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     homepageHtml = await response.text();
   } catch (e) {
     console.error("Failed to fetch homepage:", e);
-    // Try common VOP URL patterns directly
+    // Try common VOP URLs directly
     const commonVopUrls = [
       `${baseUrl}/obchodni-podminky`,
       `${baseUrl}/vseobecne-obchodni-podminky`,
       `${baseUrl}/terms`,
       `${baseUrl}/podminky`,
+      `${baseUrl}/terms-and-conditions`,
     ];
     for (const vopUrl of commonVopUrls) {
       const page = await fetchPage(vopUrl);
-      if (page && page.text.length > 200) {
+      if (page) {
         result.vop = page;
         break;
       }
@@ -152,6 +178,8 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
   const privacyUrl = matchLink(links, PRIVACY_PATTERNS);
   const kontaktUrl = matchLink(links, KONTAKT_PATTERNS);
 
+  console.log("Found links:", { vop: vopUrl, reklamace: reklamaceUrl, faq: faqUrl, privacy: privacyUrl, kontakt: kontaktUrl });
+
   // Fetch all found pages in parallel
   const [vop, reklamacni_rad, faq, privacy, kontakt] = await Promise.all([
     vopUrl ? fetchPage(vopUrl) : Promise.resolve(null),
@@ -167,17 +195,26 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
   result.privacy = privacy;
   result.kontakt = kontakt;
 
-  // If VOP not found, try common URLs
+  // If VOP not found via links, try common URL patterns including .htm variants
   if (!result.vop) {
     const commonVopUrls = [
       `${baseUrl}/obchodni-podminky`,
+      `${baseUrl}/obchodni-podminky.htm`,
+      `${baseUrl}/obchodni-podminky.html`,
       `${baseUrl}/vseobecne-obchodni-podminky`,
+      `${baseUrl}/vseobecne-obchodni-podminky.htm`,
       `${baseUrl}/terms`,
       `${baseUrl}/podminky`,
+      `${baseUrl}/terms-and-conditions`,
+      `${baseUrl}/vseobecne-obchodni-podminky/`,
+      `${baseUrl}/pages/obchodni-podminky`,
+      `${baseUrl}/info/obchodni-podminky`,
+      `${baseUrl}/clanky/obchodni-podminky`,
+      `${baseUrl}/stranky/obchodni-podminky`,
     ];
     for (const url of commonVopUrls) {
       const page = await fetchPage(url);
-      if (page && page.text.length > 200) {
+      if (page) {
         result.vop = page;
         break;
       }

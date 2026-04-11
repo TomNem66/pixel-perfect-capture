@@ -27,7 +27,7 @@ export const HistoryList = ({ items, onSelect }: HistoryListProps) => {
           >
             <div className="min-w-0">
               <p className="font-medium text-sm truncate">{item.siteName}</p>
-              <p className="text-xs text-muted-foreground truncate">{item.url}</p>
+              <p className="text-xs text-muted-foreground truncate">{item.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}</p>
             </div>
             <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
           </button>
