@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { AnalysisResult, ShopCategory } from "@/types/analysis";
 import { generateMockAnalysis } from "@/lib/mockAnalysis";
 import { addToHistory } from "@/lib/history";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step = "idle" | "fetching" | "parsing" | "analyzing" | "processing" | "done" | "error";
 
@@ -18,6 +19,39 @@ export function useAnalysis() {
 
     try {
       setStep("fetching");
+
+      // Try the real edge function first
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke("analyze-vop", {
+          body: { url, forcedCategory },
+        });
+
+        if (fnError) throw fnError;
+        if (data?.error) throw new Error(data.error);
+
+        // Show progress steps while waiting
+        setStep("parsing");
+        await delay(300);
+        setStep("analyzing");
+        await delay(300);
+        setStep("processing");
+        await delay(300);
+
+        const analysis = data as AnalysisResult;
+        setResult(analysis);
+        addToHistory({
+          url: analysis.url,
+          siteName: analysis.siteName,
+          analyzedAt: analysis.analyzedAt,
+        });
+        setStep("done");
+        return;
+      } catch {
+        // Edge function not available — fall back to mock
+        console.info("Edge function not available, using mock data");
+      }
+
+      // Fallback: mock analysis
       await delay(1200);
       setStep("parsing");
       await delay(1000);
@@ -37,7 +71,7 @@ export function useAnalysis() {
 
       setStep("done");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Nepodařilo se analyzovat podmínky.");
+      setError(e instanceof Error ? e.message : "Nepodařilo se analyzovat podmínky. Zkuste to prosím znovu.");
       setStep("error");
     }
   }, []);
