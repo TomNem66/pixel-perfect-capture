@@ -27,16 +27,16 @@ export const CATEGORY_SECTIONS: Record<ShopCategory, SectionKey[]> = {
   lekarny: ["prodejce", "lekarna_info", "reklamace", "doprava", "platby"],
 };
 
-export const CATEGORY_LABELS: Record<ShopCategory, { emoji: string; label: string }> = {
-  eshop_zbozi: { emoji: "🛒", label: "E-shop se zbožím" },
-  marketplace: { emoji: "🏬", label: "Marketplace / Tržiště" },
-  predplatne: { emoji: "🔄", label: "Předplatné / Digitální služba" },
-  vstupenky: { emoji: "🎫", label: "Vstupenky na akce" },
-  cestovani: { emoji: "✈️", label: "Cestování a ubytování" },
-  jidlo_rozvoz: { emoji: "🍔", label: "Rozvoz jídla" },
-  doprava_jizdenky: { emoji: "🚆", label: "Doprava a jízdenky" },
-  digitalni_produkt: { emoji: "💾", label: "Digitální produkt" },
-  lekarny: { emoji: "💊", label: "Lékárna" },
+export const CATEGORY_LABELS: Record<ShopCategory, { icon: string; label: string }> = {
+  eshop_zbozi: { icon: "cart", label: "E-shop se zbožím" },
+  marketplace: { icon: "store", label: "Marketplace / Tržiště" },
+  predplatne: { icon: "refresh-circle", label: "Předplatné / Digitální služba" },
+  vstupenky: { icon: "ticket", label: "Vstupenky na akce" },
+  cestovani: { icon: "plane", label: "Cestování a ubytování" },
+  jidlo_rozvoz: { icon: "bowl", label: "Rozvoz jídla" },
+  doprava_jizdenky: { icon: "train", label: "Doprava a jízdenky" },
+  digitalni_produkt: { icon: "download-circle", label: "Digitální produkt" },
+  lekarny: { icon: "pill", label: "Lékárna" },
 };
 
 export const CATEGORY_DESCRIPTIONS: Record<ShopCategory, string> = {
@@ -84,7 +84,7 @@ export const DOMAIN_CATEGORY_MAP: Record<string, ShopCategory> = {
   "wolt.com": "jidlo_rozvoz",
   "rohlik.cz": "jidlo_rozvoz",
   "kosik.cz": "jidlo_rozvoz",
-  "dameјidlo.cz": "jidlo_rozvoz",
+  "damejidlo.cz": "jidlo_rozvoz",
   "bolt.eu": "jidlo_rozvoz",
   "cd.cz": "doprava_jizdenky",
   "regiojet.cz": "doprava_jizdenky",
