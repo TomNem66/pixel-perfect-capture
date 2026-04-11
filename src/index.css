@@ -107,3 +107,27 @@
     @apply bg-accent/50;
   }
 }
+
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  body {
+    font-size: 12px;
+    color: #000;
+    background: #fff;
+  }
+  #results-dashboard {
+    max-width: 100%;
+  }
+  .rounded-xl {
+    page-break-inside: avoid;
+  }
+  /* Expand all hidden standard rows in print */
+  [data-smart-collapsed] {
+    display: block !important;
+  }
+}

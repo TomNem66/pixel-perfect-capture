@@ -13,6 +13,10 @@ export type TrustRating = "ok" | "obezretni" | "riziko";
 
 export type LegalComplianceLevel = "better" | "standard" | "worse" | "unknown";
 
+export interface CitaceMap {
+  [key: string]: string | null;
+}
+
 export interface AnalysisResult {
   url: string;
   siteName: string;
@@ -22,6 +26,8 @@ export interface AnalysisResult {
   kategorie_label: string;
   kategorie_confidence: number;
   trustRating: TrustRating;
+
+  pravni_texty_stazeny?: boolean;
 
   zdroje: {
     vop_url: string | null;
@@ -51,6 +57,7 @@ export interface AnalysisResult {
     zeme: string | null;
     typ: "přímý prodejce" | "zprostředkovatel" | "neuvedeno";
     zapis_or: string | null;
+    _citace?: CitaceMap;
   };
 
   vraceni?: {
@@ -59,6 +66,7 @@ export interface AnalysisResult {
     vyjimky: string[];
     sankce: string | null;
     lhuta_vraceni_penez_dny: number | null;
+    _citace?: CitaceMap;
   };
 
   reklamace?: {
@@ -69,6 +77,7 @@ export interface AnalysisResult {
     hradi_dopravu_vadneho: boolean | null;
     lhuta_vyrizeni_dny: number | null;
     lhuta_vraceni_penez_dny: number | null;
+    _citace?: CitaceMap;
   };
 
   platby?: {
@@ -77,6 +86,7 @@ export interface AnalysisResult {
     skryte_poplatky: string[];
     sankce_nevyzvedni: string | null;
     ceny_vcetne_dph: boolean | null;
+    _citace?: CitaceMap;
   };
 
   doprava?: {
@@ -85,6 +95,7 @@ export interface AnalysisResult {
     zpusoby: string[];
     odpovednost_poskozeni: string | null;
     sledovani_zasilky: boolean | null;
+    _citace?: CitaceMap;
   };
 
   storno?: {
@@ -93,6 +104,7 @@ export interface AnalysisResult {
     poplatek_za_storno: string | null;
     nevratna_rezervace: boolean | null;
     castecne_storno: boolean | null;
+    _citace?: CitaceMap;
   };
 
   predplatne_info?: {
@@ -105,12 +117,14 @@ export interface AnalysisResult {
     zkusebni_doba: string | null;
     trial_automaticky_placeny: boolean | null;
     zmena_ceny_predstih: string | null;
+    _citace?: CitaceMap;
   };
 
   ochrana_kupujiciho?: {
     program_ochrany: string | null;
     podminky_ochrany: string | null;
     reseni_sporu: string | null;
+    _citace?: CitaceMap;
   };
 
   licence_digital?: {
@@ -119,6 +133,7 @@ export interface AnalysisResult {
     drm: string | null;
     offline_pristup: boolean | null;
     regionalni_omezeni: string | null;
+    _citace?: CitaceMap;
   };
 
   akce_zruseni?: {
@@ -128,12 +143,14 @@ export interface AnalysisResult {
     voucher_misto_penez: boolean | null;
     prevod_na_jinou_osobu: boolean | null;
     preprodej: boolean | null;
+    _citace?: CitaceMap;
   };
 
   pojisteni?: {
     storno_pojisteni: boolean | null;
     co_pokryva: string | null;
     cena: string | null;
+    _citace?: CitaceMap;
   };
 
   jidlo_kvalita?: {
@@ -142,6 +159,7 @@ export interface AnalysisResult {
     alergeny_info: boolean | null;
     minimalni_objednavka: string | null;
     kompenzace_zpozdeni: string | null;
+    _citace?: CitaceMap;
   };
 
   lekarna_info?: {
@@ -149,6 +167,7 @@ export interface AnalysisResult {
     vraceni_leciv_vyjimka: boolean | null;
     konzultace_lekarnik: boolean | null;
     teplotni_retezec: string | null;
+    _citace?: CitaceMap;
   };
 
   varovani: Array<{

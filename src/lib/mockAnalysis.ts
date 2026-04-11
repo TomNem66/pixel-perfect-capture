@@ -58,7 +58,7 @@ export function generateMockAnalysis(url: string, forcedCategory?: ShopCategory)
     siteName: domain,
     analyzedAt: new Date().toISOString(),
     kategorie,
-    kategorie_label: `${catLabel.emoji} ${catLabel.label}`,
+    kategorie_label: catLabel.label,
     kategorie_confidence: 0.85 + (h % 15) / 100,
     trustRating: "ok",
 

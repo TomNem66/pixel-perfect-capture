@@ -1,4 +1,3 @@
-import { TOOLTIPS } from "@/lib/tooltips";
 import {
   Tooltip,
   TooltipContent,
@@ -7,13 +6,14 @@ import {
 } from "@/components/ui/tooltip";
 import { VopIcon } from "@/components/shared/VopIcon";
 
-interface InfoTooltipProps {
-  term: string;
+interface CitaceTooltipProps {
+  citace: string | null | undefined;
 }
 
-export const InfoTooltip = ({ term }: InfoTooltipProps) => {
-  const explanation = TOOLTIPS[term];
-  if (!explanation) return null;
+export const CitaceTooltip = ({ citace }: CitaceTooltipProps) => {
+  const text = citace
+    ? `Přesné znění: „${citace}"`
+    : "Informace nebyla v podmínkách nalezena";
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -21,13 +21,13 @@ export const InfoTooltip = ({ term }: InfoTooltipProps) => {
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="inline-flex items-center justify-center w-4 h-4 text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center justify-center flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <VopIcon name="circle-info" size={12} className="text-muted-foreground" />
+            <VopIcon name="question-circle" size={12} className="text-muted-foreground" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs">
-          {explanation}
+          {text}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

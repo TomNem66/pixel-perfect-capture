@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CategoryCard } from "@/components/shared/CategoryCard";
 import { FactRow } from "@/components/shared/FactRow";
 import { BoolRow } from "@/components/shared/BoolRow";
+import { VopIcon } from "@/components/shared/VopIcon";
 import { StornoCard } from "@/components/cards/StornoCard";
 import { PredplatneCard } from "@/components/cards/PredplatneCard";
 import { OchranaKupujicihoCard } from "@/components/cards/OchranaKupujicihoCard";
@@ -14,13 +15,12 @@ import { AkceZruseniCard } from "@/components/cards/AkceZruseniCard";
 import { PojisteniCard } from "@/components/cards/PojisteniCard";
 import { JidloKvalitaCard } from "@/components/cards/JidloKvalitaCard";
 import { LekarnaCard } from "@/components/cards/LekarnaCard";
+import { SmartDisplayCard } from "@/components/shared/SmartDisplayCard";
 import { CATEGORY_SECTIONS, CATEGORY_LABELS, CATEGORY_DESCRIPTIONS } from "@/lib/categoryMapping";
 import type { SectionKey } from "@/lib/categoryMapping";
 import type { ShopCategory } from "@/types/analysis";
-import {
-  ArrowLeft, ExternalLink, Store, Package, Wrench, CreditCard, Truck,
-  AlertTriangle, Star, FileText, ChevronDown, ChevronUp, Download,
-} from "lucide-react";
+import { isDefaultValue, isBetterThanDefault } from "@/lib/displayDefaults";
+import { ArrowLeft, ExternalLink, Download } from "lucide-react";
 
 interface ResultsDashboardProps {
   result: AnalysisResult;
@@ -28,10 +28,10 @@ interface ResultsDashboardProps {
   onReanalyze?: (url: string, category: ShopCategory) => void;
 }
 
-const trustConfig: Record<TrustRating, { emoji: string; label: string; className: string }> = {
-  ok: { emoji: "🟢", label: "Podmínky v pořádku", className: "border-success/40 bg-success/10 text-success" },
-  obezretni: { emoji: "🟡", label: "Buďte obezřetní", className: "border-warning/40 bg-warning/10 text-warning" },
-  riziko: { emoji: "🔴", label: "Zvýšené riziko", className: "border-danger/40 bg-danger/10 text-danger" },
+const trustConfig: Record<TrustRating, { icon: string; label: string; className: string }> = {
+  ok: { icon: "badge-ok", label: "Podmínky v pořádku", className: "border-success/40 bg-success/10 text-success" },
+  obezretni: { icon: "badge-warn", label: "Buďte obezřetní", className: "border-warning/40 bg-warning/10 text-warning" },
+  riziko: { icon: "badge-risk", label: "Zvýšené riziko", className: "border-danger/40 bg-danger/10 text-danger" },
 };
 
 const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) => {
@@ -45,12 +45,12 @@ const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) =
       {critical.length > 0 && (
         <div className="rounded-xl border border-danger/30 bg-danger/5 p-4">
           <h4 className="font-heading font-semibold text-danger flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4" /> Kritická varování
+            <VopIcon name="shield-alert" size={16} className="text-danger" /> Kritická varování
           </h4>
           <ul className="space-y-1">
             {critical.map((v, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="text-danger mt-0.5">🔴</span>
+                <VopIcon name="shield-alert" size={14} className="text-danger mt-0.5 flex-shrink-0" />
                 <span><span className="text-muted-foreground text-xs">[{v.kategorie}]</span> {v.text}</span>
               </li>
             ))}
@@ -60,12 +60,12 @@ const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) =
       {warnings.length > 0 && (
         <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
           <h4 className="font-heading font-semibold text-warning flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4" /> Na co si dát pozor
+            <VopIcon name="triangle-alert" size={16} className="text-warning" /> Na co si dát pozor
           </h4>
           <ul className="space-y-1">
             {warnings.map((v, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="text-warning mt-0.5">⚠️</span>
+                <VopIcon name="triangle-alert" size={14} className="text-warning mt-0.5 flex-shrink-0" />
                 <span><span className="text-muted-foreground text-xs">[{v.kategorie}]</span> {v.text}</span>
               </li>
             ))}
@@ -77,7 +77,7 @@ const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) =
           <ul className="space-y-1">
             {infos.map((v, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="text-primary mt-0.5">ℹ️</span>
+                <VopIcon name="circle-info" size={14} className="text-primary mt-0.5 flex-shrink-0" />
                 <span>{v.text}</span>
               </li>
             ))}
@@ -93,12 +93,12 @@ const BonusBanner = ({ bonusy }: { bonusy: AnalysisResult["bonusy"] }) => {
   return (
     <div className="rounded-xl border border-success/30 bg-success/5 p-4 mb-6">
       <h4 className="font-heading font-semibold text-success flex items-center gap-2 mb-2">
-        <Star className="w-4 h-4" /> Nadstandardní podmínky
+        <VopIcon name="star-diamond" size={16} className="text-success" /> Nadstandardní podmínky
       </h4>
       <ul className="space-y-1">
         {bonusy.map((b, i) => (
           <li key={i} className="text-sm flex items-start gap-2">
-            <span className="text-success mt-0.5">🌟</span>
+            <VopIcon name="star-diamond" size={14} className="text-success mt-0.5 flex-shrink-0" />
             <span><span className="text-muted-foreground text-xs">[{b.kategorie}]</span> {b.text}</span>
           </li>
         ))}
@@ -112,14 +112,16 @@ const NesouladyBanner = ({ nesoulady }: { nesoulady: AnalysisResult["nesoulady"]
   return (
     <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 mb-6">
       <h4 className="font-heading font-semibold text-warning flex items-center gap-2 mb-2">
-        <AlertTriangle className="w-4 h-4" /> Nesoulad mezi FAQ a VOP
+        <VopIcon name="triangle-alert" size={16} className="text-warning" /> Nesoulad mezi FAQ a VOP
       </h4>
       {nesoulady.map((n, i) => (
         <div key={i} className="text-sm mt-2">
           <p className="font-medium">{n.tema}</p>
           <p className="text-muted-foreground">VOP uvádí: <span className="text-foreground">„{n.vop_rika}"</span></p>
           <p className="text-muted-foreground">FAQ uvádí: <span className="text-foreground">„{n.faq_rika}"</span></p>
-          <p className="text-xs text-warning mt-1">⚠️ Právně závazné jsou VOP.</p>
+          <p className="text-xs text-warning mt-1 flex items-center gap-1">
+            <VopIcon name="triangle-alert" size={12} className="text-warning" /> Právně závazné jsou VOP.
+          </p>
         </div>
       ))}
     </div>
@@ -127,69 +129,104 @@ const NesouladyBanner = ({ nesoulady }: { nesoulady: AnalysisResult["nesoulady"]
 };
 
 const ProdejceCard = ({ prodejce }: { prodejce: AnalysisResult["prodejce"] }) => (
-  <CategoryCard icon={<Store className="w-5 h-5 text-primary" />} title="Kdo vám prodává">
-    <FactRow label="Název firmy" value={prodejce.nazev} />
-    <FactRow label="IČO" value={prodejce.ico} />
-    <FactRow label="Sídlo" value={prodejce.sidlo} />
-    <FactRow label="Země sídla" value={prodejce.zeme} variant={prodejce.zeme === "mimo EU" ? "warning" : undefined} />
-    <FactRow label="Typ prodejce" value={prodejce.typ === "neuvedeno" ? null : prodejce.typ} variant={prodejce.typ === "zprostředkovatel" ? "warning" : undefined} tooltip={prodejce.typ === "zprostředkovatel" ? "zprostředkovatel" : undefined} />
-    <FactRow label="Zápis v OR" value={prodejce.zapis_or} />
+  <CategoryCard icon={<VopIcon name="seller" size={20} className="text-primary" />} title="Kdo vám prodává">
+    <FactRow label="Název firmy" value={prodejce.nazev} citace={prodejce._citace?.nazev} />
+    <FactRow label="Sídlo" value={prodejce.sidlo} citace={prodejce._citace?.sidlo} />
+    <FactRow label="Země sídla" value={prodejce.zeme} variant={prodejce.zeme === "mimo EU" ? "warning" : undefined} citace={prodejce._citace?.zeme} />
+    <FactRow label="Typ prodejce" value={prodejce.typ === "neuvedeno" ? null : prodejce.typ} variant={prodejce.typ === "zprostředkovatel" ? "warning" : undefined} tooltip={prodejce.typ === "zprostředkovatel" ? "zprostředkovatel" : undefined} citace={prodejce._citace?.typ} />
   </CategoryCard>
 );
 
-const VraceniCard = ({ vraceni }: { vraceni: NonNullable<AnalysisResult["vraceni"]> }) => (
-  <CategoryCard icon={<Package className="w-5 h-5 text-primary" />} title="Vrácení zboží">
-    <FactRow
-      label="Lhůta na vrácení" value={vraceni.lhuta_dny != null ? `${vraceni.lhuta_dny} dní` : null}
-      variant={vraceni.lhuta_dny != null && vraceni.lhuta_dny > 14 ? "bonus" : undefined}
-      compliance={vraceni.lhuta_dny != null ? (vraceni.lhuta_dny > 14 ? "better" : "standard") : "unknown"}
-      tooltip="odstoupení od smlouvy"
+const VraceniCard = ({ vraceni }: { vraceni: NonNullable<AnalysisResult["vraceni"]> }) => {
+  const rows = [
+    { key: "lhuta_dny", label: "Lhůta na vrácení", value: vraceni.lhuta_dny != null ? `${vraceni.lhuta_dny} dní` : null, variant: (vraceni.lhuta_dny != null && vraceni.lhuta_dny > 14 ? "bonus" : undefined) as "bonus" | undefined, compliance: (vraceni.lhuta_dny != null ? (vraceni.lhuta_dny > 14 ? "better" : "standard") : "unknown") as any, tooltip: "odstoupení od smlouvy", rawValue: vraceni.lhuta_dny },
+    { key: "kdo_plati_postovne", label: "Poštovné při vrácení", value: vraceni.kdo_plati_postovne === "neuvedeno" ? null : `hradí ${vraceni.kdo_plati_postovne}`, variant: (vraceni.kdo_plati_postovne === "e-shop" ? "bonus" : undefined) as "bonus" | undefined, rawValue: vraceni.kdo_plati_postovne },
+    { key: "vyjimky", label: "Výjimky z vrácení", value: vraceni.vyjimky.length > 0 ? vraceni.vyjimky.join(", ") : "Žádné speciální výjimky", rawValue: vraceni.vyjimky },
+    { key: "sankce", label: "Sankce za vrácení", value: vraceni.sankce || "Žádné", variant: (vraceni.sankce ? "warning" : undefined) as "warning" | undefined, rawValue: vraceni.sankce },
+    { key: "lhuta_vraceni_penez_dny", label: "Vrácení peněz", value: vraceni.lhuta_vraceni_penez_dny != null ? `do ${vraceni.lhuta_vraceni_penez_dny} dní` : null, rawValue: vraceni.lhuta_vraceni_penez_dny },
+  ];
+
+  const interesting = rows.filter(r => isBetterThanDefault("vraceni", r.key, r.rawValue as any) || !isDefaultValue("vraceni", r.key, r.rawValue as any));
+  const standard = rows.filter(r => !interesting.includes(r));
+
+  return (
+    <SmartDisplayCard
+      icon={<VopIcon name="return-box" size={20} className="text-primary" />}
+      title="Vrácení zboží"
+      interestingRows={interesting}
+      standardRows={standard}
+      citace={vraceni._citace}
     />
-    <FactRow label="Poštovné při vrácení" value={vraceni.kdo_plati_postovne === "neuvedeno" ? null : `hradí ${vraceni.kdo_plati_postovne}`} variant={vraceni.kdo_plati_postovne === "e-shop" ? "bonus" : undefined} />
-    <FactRow label="Výjimky z vrácení" value={vraceni.vyjimky.length > 0 ? vraceni.vyjimky.join(", ") : "Žádné speciální výjimky"} />
-    <FactRow label="Sankce za vrácení" value={vraceni.sankce || "Žádné"} variant={vraceni.sankce ? "warning" : undefined} />
-    <FactRow label="Vrácení peněz" value={vraceni.lhuta_vraceni_penez_dny != null ? `do ${vraceni.lhuta_vraceni_penez_dny} dní` : null} />
-  </CategoryCard>
-);
+  );
+};
 
-const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["reklamace"]> }) => (
-  <CategoryCard icon={<Wrench className="w-5 h-5 text-primary" />} title="Reklamace a záruka">
-    <FactRow
-      label="Záruční doba" value={reklamace.zarucni_doba_mesice != null ? `${reklamace.zarucni_doba_mesice} měsíců` : null}
-      compliance={reklamace.zarucni_doba_mesice != null ? (reklamace.zarucni_doba_mesice >= 24 ? "standard" : "worse") : "unknown"}
-      tooltip="záruční doba"
+const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["reklamace"]> }) => {
+  const rows = [
+    { key: "zarucni_doba_mesice", label: "Záruční doba", value: reklamace.zarucni_doba_mesice != null ? `${reklamace.zarucni_doba_mesice} měsíců` : null, compliance: (reklamace.zarucni_doba_mesice != null ? (reklamace.zarucni_doba_mesice >= 24 ? "standard" : "worse") : "unknown") as any, tooltip: "záruční doba", rawValue: reklamace.zarucni_doba_mesice },
+    { key: "reklamace_v_zahranici", label: "Reklamace v zahraničí", value: reklamace.reklamace_v_zahranici ? "Ano – zasílá se do zahraničí" : "Ne – v ČR", variant: (reklamace.reklamace_v_zahranici ? "warning" : undefined) as "warning" | undefined, rawValue: reklamace.reklamace_v_zahranici },
+    { key: "sberne_misto_cr", label: "Sběrné místo v ČR", value: reklamace.sberne_misto_cr === true ? "Ano" : reklamace.sberne_misto_cr === false ? "Ne" : null, rawValue: reklamace.sberne_misto_cr },
+    { key: "hradi_dopravu_vadneho", label: "Hradí dopravu vadného", value: reklamace.hradi_dopravu_vadneho === true ? "Ano" : reklamace.hradi_dopravu_vadneho === false ? "Ne" : null, rawValue: reklamace.hradi_dopravu_vadneho },
+    { key: "lhuta_vyrizeni_dny", label: "Lhůta vyřízení", value: reklamace.lhuta_vyrizeni_dny != null ? `${reklamace.lhuta_vyrizeni_dny} dní` : null, compliance: (reklamace.lhuta_vyrizeni_dny != null ? (reklamace.lhuta_vyrizeni_dny <= 30 ? "standard" : "worse") : "unknown") as any, variant: (reklamace.lhuta_vyrizeni_dny != null && reklamace.lhuta_vyrizeni_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: reklamace.lhuta_vyrizeni_dny },
+    { key: "lhuta_vraceni_penez_dny", label: "Vrácení peněz", value: reklamace.lhuta_vraceni_penez_dny != null ? `do ${reklamace.lhuta_vraceni_penez_dny} dní` : null, rawValue: reklamace.lhuta_vraceni_penez_dny },
+  ];
+
+  const interesting = rows.filter(r => isBetterThanDefault("reklamace", r.key, r.rawValue as any) || !isDefaultValue("reklamace", r.key, r.rawValue as any));
+  const standard = rows.filter(r => !interesting.includes(r));
+
+  return (
+    <SmartDisplayCard
+      icon={<VopIcon name="wrench" size={20} className="text-primary" />}
+      title="Reklamace a záruka"
+      interestingRows={interesting}
+      standardRows={standard}
+      citace={reklamace._citace}
     />
-    <FactRow label="Adresa pro reklamaci" value={reklamace.adresa_reklamace} />
-    <FactRow label="Reklamace v zahraničí" value={reklamace.reklamace_v_zahranici ? "Ano – zasílá se do zahraničí" : "Ne – v ČR"} variant={reklamace.reklamace_v_zahranici ? "warning" : undefined} />
-    <BoolRow label="Sběrné místo v ČR" value={reklamace.sberne_misto_cr} />
-    <BoolRow label="Hradí dopravu vadného" value={reklamace.hradi_dopravu_vadneho} />
-    <FactRow label="Lhůta vyřízení" value={reklamace.lhuta_vyrizeni_dny != null ? `${reklamace.lhuta_vyrizeni_dny} dní` : null}
-      compliance={reklamace.lhuta_vyrizeni_dny != null ? (reklamace.lhuta_vyrizeni_dny <= 30 ? "standard" : "worse") : "unknown"}
-      variant={reklamace.lhuta_vyrizeni_dny != null && reklamace.lhuta_vyrizeni_dny > 30 ? "warning" : undefined}
+  );
+};
+
+const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> }) => {
+  const rows = [
+    { key: "metody", label: "Platební metody", value: platby.metody.length > 0 ? platby.metody.join(", ") : null, rawValue: platby.metody },
+    { key: "ma_dobirku", label: "Dobírka", value: platby.ma_dobirku ? "Ano" : "Ne", rawValue: platby.ma_dobirku },
+    { key: "skryte_poplatky", label: "Skryté poplatky", value: platby.skryte_poplatky.length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné", variant: (platby.skryte_poplatky.length > 0 ? "warning" : undefined) as "warning" | undefined, rawValue: platby.skryte_poplatky },
+    { key: "sankce_nevyzvedni", label: "Sankce za nevyzvednutí", value: platby.sankce_nevyzvedni || "Žádné", variant: (platby.sankce_nevyzvedni ? "warning" : undefined) as "warning" | undefined, tooltip: platby.sankce_nevyzvedni ? "smluvní pokuta" : undefined, rawValue: platby.sankce_nevyzvedni },
+    { key: "ceny_vcetne_dph", label: "Ceny vč. DPH", value: platby.ceny_vcetne_dph === true ? "Ano" : platby.ceny_vcetne_dph === false ? "Ne" : null, variant: (platby.ceny_vcetne_dph === false ? "warning" : undefined) as "warning" | undefined, rawValue: platby.ceny_vcetne_dph },
+  ];
+
+  const interesting = rows.filter(r => isBetterThanDefault("platby", r.key, r.rawValue as any) || !isDefaultValue("platby", r.key, r.rawValue as any));
+  const standard = rows.filter(r => !interesting.includes(r));
+
+  return (
+    <SmartDisplayCard
+      icon={<VopIcon name="credit-card" size={20} className="text-primary" />}
+      title="Platby a poplatky"
+      interestingRows={interesting}
+      standardRows={standard}
+      citace={platby._citace}
     />
-    <FactRow label="Vrácení peněz" value={reklamace.lhuta_vraceni_penez_dny != null ? `do ${reklamace.lhuta_vraceni_penez_dny} dní` : null} />
-  </CategoryCard>
-);
+  );
+};
 
-const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> }) => (
-  <CategoryCard icon={<CreditCard className="w-5 h-5 text-primary" />} title="Platby a poplatky">
-    <FactRow label="Platební metody" value={platby.metody.length > 0 ? platby.metody.join(", ") : null} />
-    <FactRow label="Dobírka" value={platby.ma_dobirku ? "Ano" : "Ne"} />
-    <FactRow label="Skryté poplatky" value={platby.skryte_poplatky.length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné"} variant={platby.skryte_poplatky.length > 0 ? "warning" : undefined} />
-    <FactRow label="Sankce za nevyzvednutí" value={platby.sankce_nevyzvedni || "Žádné"} variant={platby.sankce_nevyzvedni ? "warning" : undefined} tooltip={platby.sankce_nevyzvedni ? "smluvní pokuta" : undefined} />
-    <FactRow label="Ceny vč. DPH" value={platby.ceny_vcetne_dph === true ? "Ano" : platby.ceny_vcetne_dph === false ? "Ne" : null} variant={platby.ceny_vcetne_dph === false ? "warning" : undefined} />
-  </CategoryCard>
-);
+const DopravaCard = ({ doprava }: { doprava: NonNullable<AnalysisResult["doprava"]> }) => {
+  const rows = [
+    { key: "dodaci_lhuta_dny", label: "Dodací lhůta", value: doprava.dodaci_lhuta_dny != null ? `${doprava.dodaci_lhuta_dny} dní` : null, variant: (doprava.dodaci_lhuta_dny != null && doprava.dodaci_lhuta_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: doprava.dodaci_lhuta_dny },
+    { key: "zpusoby", label: "Způsoby dopravy", value: doprava.zpusoby.length > 0 ? doprava.zpusoby.join(", ") : null, rawValue: doprava.zpusoby },
+    { key: "sledovani_zasilky", label: "Sledování zásilky", value: doprava.sledovani_zasilky === true ? "Ano" : doprava.sledovani_zasilky === false ? "Ne" : null, rawValue: doprava.sledovani_zasilky },
+  ];
 
-const DopravaCard = ({ doprava }: { doprava: NonNullable<AnalysisResult["doprava"]> }) => (
-  <CategoryCard icon={<Truck className="w-5 h-5 text-primary" />} title="Doprava a dodání">
-    <FactRow label="Dodací lhůta" value={doprava.dodaci_lhuta_dny != null ? `${doprava.dodaci_lhuta_dny} dní` : null} variant={doprava.dodaci_lhuta_dny != null && doprava.dodaci_lhuta_dny > 30 ? "warning" : undefined} />
-    {doprava.dodaci_lhuta_text && <FactRow label="Formulace z VOP" value={`„${doprava.dodaci_lhuta_text}"`} />}
-    <FactRow label="Způsoby dopravy" value={doprava.zpusoby.length > 0 ? doprava.zpusoby.join(", ") : null} />
-    <FactRow label="Odpovědnost za poškození" value={doprava.odpovednost_poskozeni} />
-    <BoolRow label="Sledování zásilky" value={doprava.sledovani_zasilky} />
-  </CategoryCard>
-);
+  const interesting = rows.filter(r => !isDefaultValue("doprava", r.key, r.rawValue as any));
+  const standard = rows.filter(r => !interesting.includes(r));
+
+  return (
+    <SmartDisplayCard
+      icon={<VopIcon name="truck" size={20} className="text-primary" />}
+      title="Doprava a dodání"
+      interestingRows={interesting}
+      standardRows={standard}
+      citace={doprava._citace}
+    />
+  );
+};
 
 function renderSection(key: SectionKey, result: AnalysisResult) {
   switch (key) {
@@ -214,6 +251,7 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
   const [categoryOverrideOpen, setCategoryOverrideOpen] = useState(false);
   const sections = CATEGORY_SECTIONS[result.kategorie];
   const trust = trustConfig[result.trustRating];
+  const catLabel = CATEGORY_LABELS[result.kategorie];
   const allCategories = Object.keys(CATEGORY_LABELS) as ShopCategory[];
 
   const handlePrint = () => window.print();
@@ -238,7 +276,7 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
 
       {/* Trust Badge */}
       <div className={`rounded-xl border p-4 mb-6 flex items-center gap-3 ${trust.className}`}>
-        <span className="text-2xl">{trust.emoji}</span>
+        <VopIcon name={trust.icon} size={32} />
         <div>
           <p className="font-heading font-bold text-lg">{trust.label}</p>
           <p className="text-sm opacity-80">
@@ -253,7 +291,10 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <h1 className="text-2xl md:text-3xl font-heading font-bold">{result.siteName}</h1>
-          <Badge variant="secondary" className="text-xs font-normal">{result.kategorie_label}</Badge>
+          <Badge variant="secondary" className="text-xs font-normal gap-1.5">
+            <VopIcon name={catLabel.icon} size={14} />
+            {catLabel.label}
+          </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
           Analyzováno {new Date(result.analyzedAt).toLocaleDateString("cs-CZ")} · Zde je to, co potřebujete vědět
@@ -274,13 +315,12 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
       {result.pravni_odkazy.length > 0 && (
         <div className="mt-8 rounded-xl border border-border/60 bg-card p-5">
           <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-5 h-5 text-primary" />
+            <VopIcon name="file-text" size={20} className="text-primary" />
             <h3 className="font-heading font-semibold text-lg">Právní odkazy</h3>
           </div>
           <div className="space-y-2">
             {result.pravni_odkazy.map((ref, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <span>📖</span>
                 <a href={ref.url_esbirka} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   {ref.paragraf} {ref.zakon}
                 </a>
@@ -313,7 +353,7 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
             className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
           >
             Jedná se o jiný typ obchodu?
-            {categoryOverrideOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            <VopIcon name={categoryOverrideOpen ? "chevron-up" : "chevron-down"} size={12} />
           </button>
           {categoryOverrideOpen && (
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-w-2xl mx-auto">
@@ -325,7 +365,9 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
                     onClick={() => { onReanalyze(result.url, cat); setCategoryOverrideOpen(false); }}
                     className="text-left p-3 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-accent/50 transition-colors"
                   >
-                    <span className="text-sm font-medium">{label.emoji} {label.label}</span>
+                    <span className="text-sm font-medium flex items-center gap-1.5">
+                      <VopIcon name={label.icon} size={16} /> {label.label}
+                    </span>
                     <p className="text-xs text-muted-foreground mt-0.5">{CATEGORY_DESCRIPTIONS[cat]}</p>
                   </button>
                 );
@@ -338,12 +380,11 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
       {/* Disclaimer */}
       <div className="mt-8 mb-4 p-4 rounded-xl border border-border/40 bg-muted/30">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          ⚠️ <strong>VOPatrně!</strong> je informační nástroj a může obsahovat nepřesnosti.
-          Výstupy nepředstavují právní poradenství. Vždy si ověřte informace
-          přímo u prodejce a v případě potřeby se obraťte na právníka
-          nebo{" "}
+          <VopIcon name="triangle-alert" size={12} className="text-muted-foreground inline-block mr-1 -mt-0.5" />
+          <strong>VOPatrně!</strong> poskytuje informační přehled podmínek, nikoliv právní poradenství.
+          Pro právní radu se obraťte na odborníka nebo{" "}
           <a href="https://www.coi.cz/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-            Českou obchodní inspekci (ČOI)
+            ČOI (coi.cz)
           </a>.
         </p>
       </div>
