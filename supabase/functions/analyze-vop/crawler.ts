@@ -195,16 +195,22 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
   result.privacy = privacy;
   result.kontakt = kontakt;
 
-  // If VOP not found via links, try common URL patterns
+  // If VOP not found via links, try common URL patterns including .htm variants
   if (!result.vop) {
     const commonVopUrls = [
       `${baseUrl}/obchodni-podminky`,
+      `${baseUrl}/obchodni-podminky.htm`,
+      `${baseUrl}/obchodni-podminky.html`,
       `${baseUrl}/vseobecne-obchodni-podminky`,
+      `${baseUrl}/vseobecne-obchodni-podminky.htm`,
       `${baseUrl}/terms`,
       `${baseUrl}/podminky`,
       `${baseUrl}/terms-and-conditions`,
       `${baseUrl}/vseobecne-obchodni-podminky/`,
       `${baseUrl}/pages/obchodni-podminky`,
+      `${baseUrl}/info/obchodni-podminky`,
+      `${baseUrl}/clanky/obchodni-podminky`,
+      `${baseUrl}/stranky/obchodni-podminky`,
     ];
     for (const url of commonVopUrls) {
       const page = await fetchPage(url);
