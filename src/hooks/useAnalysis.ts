@@ -27,7 +27,10 @@ export function useAnalysis() {
         });
 
         if (fnError) throw fnError;
-        if (data?.error) throw new Error(data.error);
+        if (data?.error) {
+          if (data.error === "vop_not_found") throw new Error("vop_not_found");
+          throw new Error(data.error);
+        }
 
         // Show progress steps while waiting
         setStep("parsing");

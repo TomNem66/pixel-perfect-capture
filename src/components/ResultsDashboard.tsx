@@ -128,10 +128,10 @@ const NesouladyBanner = ({ nesoulady }: { nesoulady: AnalysisResult["nesoulady"]
   );
 };
 
+// Per spec 3.1: show only nazev, zeme, typ — NOT sidlo, ico, zapis_or
 const ProdejceCard = ({ prodejce }: { prodejce: AnalysisResult["prodejce"] }) => (
   <CategoryCard icon={<VopIcon name="seller" size={20} className="text-primary" />} title="Kdo vám prodává">
     <FactRow label="Název firmy" value={prodejce.nazev} citace={prodejce._citace?.nazev} />
-    <FactRow label="Sídlo" value={prodejce.sidlo} citace={prodejce._citace?.sidlo} />
     <FactRow label="Země sídla" value={prodejce.zeme} variant={prodejce.zeme === "mimo EU" ? "warning" : undefined} citace={prodejce._citace?.zeme} />
     <FactRow label="Typ prodejce" value={prodejce.typ === "neuvedeno" ? null : prodejce.typ} variant={prodejce.typ === "zprostředkovatel" ? "warning" : undefined} tooltip={prodejce.typ === "zprostředkovatel" ? "zprostředkovatel" : undefined} citace={prodejce._citace?.typ} />
   </CategoryCard>
@@ -161,9 +161,9 @@ const VraceniCard = ({ vraceni }: { vraceni: NonNullable<AnalysisResult["vraceni
 };
 
 const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["reklamace"]> }) => {
+  // Per spec 3.1: don't show adresa_reklamace as row, don't show reklamace_v_zahranici as row
   const rows = [
     { key: "zarucni_doba_mesice", label: "Záruční doba", value: reklamace.zarucni_doba_mesice != null ? `${reklamace.zarucni_doba_mesice} měsíců` : null, compliance: (reklamace.zarucni_doba_mesice != null ? (reklamace.zarucni_doba_mesice >= 24 ? "standard" : "worse") : "unknown") as any, tooltip: "záruční doba", rawValue: reklamace.zarucni_doba_mesice },
-    { key: "reklamace_v_zahranici", label: "Reklamace v zahraničí", value: reklamace.reklamace_v_zahranici ? "Ano – zasílá se do zahraničí" : "Ne – v ČR", variant: (reklamace.reklamace_v_zahranici ? "warning" : undefined) as "warning" | undefined, rawValue: reklamace.reklamace_v_zahranici },
     { key: "sberne_misto_cr", label: "Sběrné místo v ČR", value: reklamace.sberne_misto_cr === true ? "Ano" : reklamace.sberne_misto_cr === false ? "Ne" : null, rawValue: reklamace.sberne_misto_cr },
     { key: "hradi_dopravu_vadneho", label: "Hradí dopravu vadného", value: reklamace.hradi_dopravu_vadneho === true ? "Ano" : reklamace.hradi_dopravu_vadneho === false ? "Ne" : null, rawValue: reklamace.hradi_dopravu_vadneho },
     { key: "lhuta_vyrizeni_dny", label: "Lhůta vyřízení", value: reklamace.lhuta_vyrizeni_dny != null ? `${reklamace.lhuta_vyrizeni_dny} dní` : null, compliance: (reklamace.lhuta_vyrizeni_dny != null ? (reklamace.lhuta_vyrizeni_dny <= 30 ? "standard" : "worse") : "unknown") as any, variant: (reklamace.lhuta_vyrizeni_dny != null && reklamace.lhuta_vyrizeni_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: reklamace.lhuta_vyrizeni_dny },
@@ -184,13 +184,13 @@ const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["r
   );
 };
 
+// Per spec 3.1: don't show ceny_vcetne_dph (always true in CZ, legal requirement)
 const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> }) => {
   const rows = [
     { key: "metody", label: "Platební metody", value: platby.metody.length > 0 ? platby.metody.join(", ") : null, rawValue: platby.metody },
     { key: "ma_dobirku", label: "Dobírka", value: platby.ma_dobirku ? "Ano" : "Ne", rawValue: platby.ma_dobirku },
     { key: "skryte_poplatky", label: "Skryté poplatky", value: platby.skryte_poplatky.length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné", variant: (platby.skryte_poplatky.length > 0 ? "warning" : undefined) as "warning" | undefined, rawValue: platby.skryte_poplatky },
     { key: "sankce_nevyzvedni", label: "Sankce za nevyzvednutí", value: platby.sankce_nevyzvedni || "Žádné", variant: (platby.sankce_nevyzvedni ? "warning" : undefined) as "warning" | undefined, tooltip: platby.sankce_nevyzvedni ? "smluvní pokuta" : undefined, rawValue: platby.sankce_nevyzvedni },
-    { key: "ceny_vcetne_dph", label: "Ceny vč. DPH", value: platby.ceny_vcetne_dph === true ? "Ano" : platby.ceny_vcetne_dph === false ? "Ne" : null, variant: (platby.ceny_vcetne_dph === false ? "warning" : undefined) as "warning" | undefined, rawValue: platby.ceny_vcetne_dph },
   ];
 
   const interesting = rows.filter(r => isBetterThanDefault("platby", r.key, r.rawValue as any) || !isDefaultValue("platby", r.key, r.rawValue as any));
@@ -208,8 +208,9 @@ const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> 
 };
 
 const DopravaCard = ({ doprava }: { doprava: NonNullable<AnalysisResult["doprava"]> }) => {
+  // Per spec 3.1: odpovednost_poskozeni shown only as warning if risk transfers before physical receipt
   const rows = [
-    { key: "dodaci_lhuta_dny", label: "Dodací lhůta", value: doprava.dodaci_lhuta_dny != null ? `${doprava.dodaci_lhuta_dny} dní` : null, variant: (doprava.dodaci_lhuta_dny != null && doprava.dodaci_lhuta_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: doprava.dodaci_lhuta_dny },
+    { key: "dodaci_lhuta_dny", label: "Dodací lhůta", value: doprava.dodaci_lhuta_dny != null ? `${doprava.dodaci_lhuta_dny} dní` : (doprava.dodaci_lhuta_text || null), variant: (doprava.dodaci_lhuta_dny != null && doprava.dodaci_lhuta_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: doprava.dodaci_lhuta_dny },
     { key: "zpusoby", label: "Způsoby dopravy", value: doprava.zpusoby.length > 0 ? doprava.zpusoby.join(", ") : null, rawValue: doprava.zpusoby },
     { key: "sledovani_zasilky", label: "Sledování zásilky", value: doprava.sledovani_zasilky === true ? "Ano" : doprava.sledovani_zasilky === false ? "Ne" : null, rawValue: doprava.sledovani_zasilky },
   ];
@@ -287,7 +288,7 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
         </div>
       </div>
 
-      {/* Title + Category */}
+      {/* Title + Category + Category Switcher (moved up per spec 3.6) */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <h1 className="text-2xl md:text-3xl font-heading font-bold">{result.siteName}</h1>
@@ -296,9 +297,43 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
             {catLabel.label}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-2">
           Analyzováno {new Date(result.analyzedAt).toLocaleDateString("cs-CZ")} · Zde je to, co potřebujete vědět
         </p>
+
+        {/* Category override — compact row under title */}
+        {onReanalyze && (
+          <div className="print:hidden">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Detekováno jako: <span className="font-medium text-foreground">{catLabel.label}</span></span>
+              <button
+                onClick={() => setCategoryOverrideOpen(!categoryOverrideOpen)}
+                className="text-primary hover:text-primary/80 transition-colors font-medium inline-flex items-center gap-0.5"
+              >
+                Změnit <VopIcon name={categoryOverrideOpen ? "chevron-up" : "chevron-down"} size={10} />
+              </button>
+            </div>
+            {categoryOverrideOpen && (
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-w-2xl">
+                {allCategories.filter(c => c !== result.kategorie).map(cat => {
+                  const label = CATEGORY_LABELS[cat];
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => { onReanalyze(result.url, cat); setCategoryOverrideOpen(false); }}
+                      className="text-left p-3 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-accent/50 transition-colors"
+                    >
+                      <span className="text-sm font-medium flex items-center gap-1.5">
+                        <VopIcon name={label.icon} size={16} /> {label.label}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-0.5">{CATEGORY_DESCRIPTIONS[cat]}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Banners */}
@@ -342,38 +377,6 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
               </a>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Category Override */}
-      {onReanalyze && (
-        <div className="mt-6 text-center print:hidden">
-          <button
-            onClick={() => setCategoryOverrideOpen(!categoryOverrideOpen)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-          >
-            Jedná se o jiný typ obchodu?
-            <VopIcon name={categoryOverrideOpen ? "chevron-up" : "chevron-down"} size={12} />
-          </button>
-          {categoryOverrideOpen && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-w-2xl mx-auto">
-              {allCategories.filter(c => c !== result.kategorie).map(cat => {
-                const label = CATEGORY_LABELS[cat];
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => { onReanalyze(result.url, cat); setCategoryOverrideOpen(false); }}
-                    className="text-left p-3 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-accent/50 transition-colors"
-                  >
-                    <span className="text-sm font-medium flex items-center gap-1.5">
-                      <VopIcon name={label.icon} size={16} /> {label.label}
-                    </span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{CATEGORY_DESCRIPTIONS[cat]}</p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
 
