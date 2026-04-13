@@ -23,11 +23,10 @@ serve(async (req) => {
       });
     }
 
-    const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    const AI_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-haiku-4-5";
-    console.log("Using Anthropic Claude API, key available:", !!API_KEY, "model:", AI_MODEL);
+    const API_KEY = Deno.env.get("GEMINI_API_KEY");
+    console.log("Using Google Gemini API, key available:", !!API_KEY);
     if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "Anthropic API klíč není nakonfigurován" }), {
+      return new Response(JSON.stringify({ error: "Gemini API klíč není nakonfigurován" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -48,12 +47,12 @@ serve(async (req) => {
     console.log("Fetching legal texts...");
     const { legalTexts, success: legalSuccess } = await fetchLegalTexts(forcedCategory);
 
-    // Step 3: Call Claude API
-    console.log("Calling Claude API...");
+    // Step 3: Call Gemini API
+    console.log("Calling Gemini API...");
     const systemPrompt = buildSystemPrompt(legalTexts);
     const userPrompt = buildUserPrompt(pages, forcedCategory);
 
-    const aiResponse = await callAI(API_KEY, AI_MODEL, systemPrompt, userPrompt);
+    const aiResponse = await callAI(API_KEY, systemPrompt, userPrompt);
 
     if (!aiResponse) {
       return new Response(JSON.stringify({ error: "ai_error" }), {
@@ -75,7 +74,6 @@ serve(async (req) => {
           console.log("Retrying AI with stricter prompt...");
           const retryResponse = await callAI(
             API_KEY,
-            AI_MODEL,
             systemPrompt,
             userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu.",
           );
@@ -126,45 +124,45 @@ serve(async (req) => {
 
 async function callAI(
   apiKey: string,
-  model: string,
   systemPrompt: string,
   userPrompt: string,
   retryCount = 0,
 ): Promise<string | null> {
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 8192,
-        temperature: 0,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 8192,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Claude API error:", response.status, errText);
+      console.error("Gemini API error:", response.status, errText);
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
-        return callAI(apiKey, model, systemPrompt, userPrompt, 1);
+        return callAI(apiKey, systemPrompt, userPrompt, 1);
       }
       return null;
     }
 
     const data = await response.json();
-    return data.content?.[0]?.text || null;
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
   } catch (e) {
-    console.error("Claude API fetch error:", e);
+    console.error("Gemini API fetch error:", e);
     if (retryCount === 0) {
       await new Promise((r) => setTimeout(r, 2000));
-      return callAI(apiKey, model, systemPrompt, userPrompt, 1);
+      return callAI(apiKey, systemPrompt, userPrompt, 1);
     }
     return null;
   }
