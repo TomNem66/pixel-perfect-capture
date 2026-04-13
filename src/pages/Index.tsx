@@ -75,15 +75,14 @@ const Index = () => {
                 ? "Nepodařilo se automaticky najít obchodní podmínky. Zkuste zadat URL podmínek ručně."
                 : error}
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <Button variant="outline" onClick={reset}>Zpět na hlavní stránku</Button>
-              {error === "vop_not_found" ? (
-                <Button onClick={() => { setFailedUrl(""); setManualDialogOpen(true); }}>
-                  Zadat URL podmínek ručně
-                </Button>
-              ) : (
-                <Button onClick={() => handleAnalyze(failedUrl)}>Zkusit znovu</Button>
+              {error !== "vop_not_found" && (
+                <Button variant="outline" onClick={() => handleAnalyze(failedUrl)}>Zkusit znovu</Button>
               )}
+              <Button onClick={() => setManualDialogOpen(true)}>
+                Zadat URL podmínek ručně
+              </Button>
             </div>
           </div>
         )}
