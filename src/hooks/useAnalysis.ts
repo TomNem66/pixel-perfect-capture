@@ -41,6 +41,19 @@ export function useAnalysis() {
         await delay(300);
 
         const analysis = data as AnalysisResult;
+        
+        // Check if analysis has enough data (point 9)
+        let nonNullCount = 0;
+        const sections = [analysis.vraceni, analysis.reklamace, analysis.platby, analysis.doprava, analysis.storno, analysis.predplatne_info, analysis.ochrana_kupujiciho, analysis.licence_digital, analysis.akce_zruseni, analysis.pojisteni, analysis.jidlo_kvalita, analysis.lekarna_info];
+        for (const section of sections) {
+          if (!section) continue;
+          for (const [k, v] of Object.entries(section)) {
+            if (k === "_citace") continue;
+            if (v !== null && v !== undefined) nonNullCount++;
+          }
+        }
+        analysis._lowData = nonNullCount < 3;
+        
         setResult(analysis);
         addToHistory({
           url: analysis.url,
