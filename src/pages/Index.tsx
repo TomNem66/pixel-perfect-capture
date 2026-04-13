@@ -100,7 +100,6 @@ const Index = () => {
             <ResultsDashboard result={result} onReset={reset} onReanalyze={handleReanalyze} />
           </>
         )}
-        )}
       </div>
 
       <ManualUrlDialog
