@@ -22,6 +22,7 @@ const Index = () => {
   }, []);
 
   const handleAnalyze = async (url: string) => {
+    setFailedUrl(url);
     try {
       await analyze(url);
     } catch {
