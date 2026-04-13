@@ -23,7 +23,8 @@ serve(async (req) => {
       });
     }
 
-    const API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+    const API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    console.log("Using Lovable AI Gateway, key available:", !!API_KEY);
     if (!API_KEY) {
       return new Response(JSON.stringify({ error: "API klíč není nakonfigurován" }), {
         status: 200,
