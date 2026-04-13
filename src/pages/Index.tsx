@@ -8,8 +8,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { getHistory } from "@/lib/history";
 import { HistoryItem, ShopCategory } from "@/types/analysis";
-import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VopIcon } from "@/components/shared/VopIcon";
 
 const Index = () => {
   const { step, result, error, analyze, reset } = useAnalysis();
@@ -65,9 +65,7 @@ const Index = () => {
 
         {step === "error" && (
           <div className="max-w-md mx-auto text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
-              <AlertCircle className="w-8 h-8 text-destructive" />
-            </div>
+            <VopIcon name="circle-x" size={48} className="mx-auto mb-4" />
             <h2 className="text-xl font-heading font-bold mb-2">
               {error === "vop_not_found" ? "Obchodní podmínky nenalezeny" : "Nastala chyba"}
             </h2>
@@ -77,10 +75,14 @@ const Index = () => {
                 : error}
             </p>
             <div className="flex gap-3 justify-center">
-              <Button onClick={reset}>Zkusit znovu</Button>
-              <Button variant="outline" onClick={() => { setFailedUrl(""); setManualDialogOpen(true); }}>
-                Zadat URL podmínek ručně
-              </Button>
+              <Button variant="outline" onClick={reset}>Zpět na hlavní stránku</Button>
+              {error === "vop_not_found" ? (
+                <Button onClick={() => { setFailedUrl(""); setManualDialogOpen(true); }}>
+                  Zadat URL podmínek ručně
+                </Button>
+              ) : (
+                <Button onClick={() => handleAnalyze(failedUrl)}>Zkusit znovu</Button>
+              )}
             </div>
           </div>
         )}
