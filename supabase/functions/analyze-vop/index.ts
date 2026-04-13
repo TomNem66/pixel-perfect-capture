@@ -122,15 +122,19 @@ serve(async (req) => {
   }
 });
 
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"];
+
 async function callAI(
   apiKey: string,
   systemPrompt: string,
   userPrompt: string,
+  modelIndex = 0,
   retryCount = 0,
 ): Promise<string | null> {
+  const model = MODELS[modelIndex] || MODELS[MODELS.length - 1];
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,21 +152,33 @@ async function callAI(
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini API error:", response.status, errText);
+      console.error(`Gemini API error (${model}):`, response.status, errText);
+
+      // On 503/429, try fallback model first
+      if ((response.status === 503 || response.status === 429) && modelIndex < MODELS.length - 1) {
+        console.log(`Falling back to ${MODELS[modelIndex + 1]}...`);
+        return callAI(apiKey, systemPrompt, userPrompt, modelIndex + 1, 0);
+      }
+
+      // Retry same model on 5xx
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
-        return callAI(apiKey, systemPrompt, userPrompt, 1);
+        return callAI(apiKey, systemPrompt, userPrompt, modelIndex, 1);
       }
       return null;
     }
 
+    console.log(`Gemini response OK from model: ${model}`);
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
   } catch (e) {
-    console.error("Gemini API fetch error:", e);
+    console.error(`Gemini API fetch error (${model}):`, e);
+    if (modelIndex < MODELS.length - 1) {
+      return callAI(apiKey, systemPrompt, userPrompt, modelIndex + 1, 0);
+    }
     if (retryCount === 0) {
       await new Promise((r) => setTimeout(r, 2000));
-      return callAI(apiKey, systemPrompt, userPrompt, 1);
+      return callAI(apiKey, systemPrompt, userPrompt, modelIndex, 1);
     }
     return null;
   }
