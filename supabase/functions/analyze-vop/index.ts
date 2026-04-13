@@ -122,7 +122,7 @@ serve(async (req) => {
   }
 });
 
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 async function callAI(
   apiKey: string,
