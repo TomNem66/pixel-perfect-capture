@@ -112,6 +112,32 @@ function matchLink(links: { href: string; text: string }[], patterns: RegExp[]):
   return null;
 }
 
+async function fetchViaScraperApi(url: string): Promise<string | null> {
+  const scraperApiKey = Deno.env.get("SCRAPER_API_KEY");
+  if (!scraperApiKey) return null;
+  try {
+    console.log("Trying ScraperAPI for:", url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    const response = await fetch(
+      `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    if (!response.ok) {
+      console.warn(`ScraperAPI failed: ${url} -> ${response.status}`);
+      return null;
+    }
+    const html = await response.text();
+    const text = stripHtml(html);
+    if (text.length < 100) return null;
+    return text;
+  } catch (e) {
+    console.warn("ScraperAPI error:", url, e);
+    return null;
+  }
+}
+
 async function fetchViaJina(url: string): Promise<string | null> {
   try {
     console.log("Falling back to Jina Reader for:", url);
