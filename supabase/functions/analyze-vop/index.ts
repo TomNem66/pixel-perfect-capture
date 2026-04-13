@@ -53,7 +53,7 @@ serve(async (req) => {
     const systemPrompt = buildSystemPrompt(legalTexts);
     const userPrompt = buildUserPrompt(pages, forcedCategory);
 
-    const aiResponse = await callAI(API_KEY, systemPrompt, userPrompt);
+    const aiResponse = await callAI(API_KEY, AI_MODEL, systemPrompt, userPrompt);
 
     if (!aiResponse) {
       return new Response(JSON.stringify({ error: "ai_error" }), {
@@ -75,6 +75,7 @@ serve(async (req) => {
           console.log("Retrying AI with stricter prompt...");
           const retryResponse = await callAI(
             API_KEY,
+            AI_MODEL,
             systemPrompt,
             userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu."
           );
@@ -125,6 +126,7 @@ serve(async (req) => {
 
 async function callAI(
   apiKey: string,
+  model: string,
   systemPrompt: string,
   userPrompt: string,
   retryCount = 0
@@ -138,7 +140,7 @@ async function callAI(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model,
         max_tokens: 8192,
         temperature: 0,
         system: systemPrompt,
