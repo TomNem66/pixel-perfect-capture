@@ -72,7 +72,7 @@ serve(async (req) => {
         } catch {
           console.log("Retrying AI with stricter prompt...");
           const retryResponse = await callAI(
-            ANTHROPIC_API_KEY,
+            API_KEY,
             systemPrompt,
             userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu."
           );
