@@ -23,10 +23,10 @@ serve(async (req) => {
       });
     }
 
-    const API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    console.log("Using Lovable AI Gateway, key available:", !!API_KEY);
+    const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    console.log("Using Anthropic Claude API, key available:", !!API_KEY);
     if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "API klíč není nakonfigurován" }), {
+      return new Response(JSON.stringify({ error: "Anthropic API klíč není nakonfigurován" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -129,26 +129,27 @@ async function callAI(
   retryCount = 0
 ): Promise<string | null> {
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8192,
+        temperature: 0,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0,
-        max_tokens: 8192,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Lovable AI Gateway error:", response.status, errText);
+      console.error("Claude API error:", response.status, errText);
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
         return callAI(apiKey, systemPrompt, userPrompt, 1);
@@ -157,9 +158,9 @@ async function callAI(
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
+    return data.content?.[0]?.text || null;
   } catch (e) {
-    console.error("Lovable AI Gateway fetch error:", e);
+    console.error("Claude API fetch error:", e);
     if (retryCount === 0) {
       await new Promise((r) => setTimeout(r, 2000));
       return callAI(apiKey, systemPrompt, userPrompt, 1);
