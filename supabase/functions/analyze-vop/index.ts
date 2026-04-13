@@ -155,7 +155,7 @@ async function callAI(
       console.error("Claude API error:", response.status, errText);
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
-        return callAI(apiKey, systemPrompt, userPrompt, 1);
+        return callAI(apiKey, model, systemPrompt, userPrompt, 1);
       }
       return null;
     }
@@ -166,7 +166,7 @@ async function callAI(
     console.error("Claude API fetch error:", e);
     if (retryCount === 0) {
       await new Promise((r) => setTimeout(r, 2000));
-      return callAI(apiKey, systemPrompt, userPrompt, 1);
+      return callAI(apiKey, model, systemPrompt, userPrompt, 1);
     }
     return null;
   }
