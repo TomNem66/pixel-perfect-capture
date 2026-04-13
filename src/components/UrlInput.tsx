@@ -33,7 +33,7 @@ export const UrlInput = ({ onAnalyze, isLoading }: UrlInputProps) => {
       <form onSubmit={handleSubmit} className="flex gap-3 max-w-lg mx-auto">
         <Input
           type="url"
-          placeholder="https://example.com/terms"
+          placeholder="Zadejte URL e-shopu"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="h-12 text-base bg-card border-border/60 focus-visible:ring-primary/40"

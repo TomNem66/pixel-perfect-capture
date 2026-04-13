@@ -18,7 +18,7 @@ export type SectionKey =
 export const CATEGORY_SECTIONS: Record<ShopCategory, SectionKey[]> = {
   eshop_zbozi: ["prodejce", "vraceni", "reklamace", "platby", "doprava"],
   marketplace: ["prodejce", "ochrana_kupujiciho", "vraceni", "reklamace", "doprava"],
-  predplatne: ["prodejce", "predplatne_info", "storno", "licence_digital", "platby"],
+  predplatne: ["prodejce", "predplatne_info", "storno", "platby"],
   vstupenky: ["prodejce", "akce_zruseni", "storno", "platby"],
   cestovani: ["prodejce", "storno", "pojisteni", "platby"],
   jidlo_rozvoz: ["prodejce", "jidlo_kvalita", "storno", "platby"],
@@ -30,7 +30,7 @@ export const CATEGORY_SECTIONS: Record<ShopCategory, SectionKey[]> = {
 export const CATEGORY_LABELS: Record<ShopCategory, { icon: string; label: string }> = {
   eshop_zbozi: { icon: "cart", label: "E-shop se zbožím" },
   marketplace: { icon: "store", label: "Marketplace / Tržiště" },
-  predplatne: { icon: "refresh-circle", label: "Předplatné / Digitální služba" },
+  predplatne: { icon: "refresh-circle", label: "Předplatné / Služba" },
   vstupenky: { icon: "ticket", label: "Vstupenky na akce" },
   cestovani: { icon: "plane", label: "Cestování a ubytování" },
   jidlo_rozvoz: { icon: "bowl", label: "Rozvoz jídla" },
@@ -42,7 +42,7 @@ export const CATEGORY_LABELS: Record<ShopCategory, { icon: string; label: string
 export const CATEGORY_DESCRIPTIONS: Record<ShopCategory, string> = {
   eshop_zbozi: "Klasický e-shop prodávající fyzické zboží (elektronika, oblečení, potraviny…)",
   marketplace: "Tržiště zprostředkovávající prodej od více prodejců (Amazon, Temu, AliExpress…)",
-  predplatne: "Služba s pravidelným předplatným (Netflix, Spotify, Adobe…)",
+  predplatne: "Služba s pravidelným předplatným — digitální (Netflix, Spotify) i fyzické (fitko, členství)",
   vstupenky: "Prodej vstupenek na koncerty, festivaly, divadlo…",
   cestovani: "Rezervace ubytování, letenek, zájezdů (Booking, Airbnb, Kiwi…)",
   jidlo_rozvoz: "Rozvoz jídla a potravin (Wolt, Rohlik, Bolt Food…)",
@@ -71,6 +71,8 @@ export const DOMAIN_CATEGORY_MAP: Record<string, ShopCategory> = {
   "adobe.com": "predplatne",
   "apple.com": "predplatne",
   "hbomax.com": "predplatne",
+  "johnreed.fitness": "predplatne",
+  "multisport.cz": "predplatne",
   "ticketmaster.com": "vstupenky",
   "ticketmaster.cz": "vstupenky",
   "goout.net": "vstupenky",
@@ -78,6 +80,7 @@ export const DOMAIN_CATEGORY_MAP: Record<string, ShopCategory> = {
   "ticketportal.cz": "vstupenky",
   "booking.com": "cestovani",
   "airbnb.com": "cestovani",
+  "airbnb.cz": "cestovani",
   "kiwi.com": "cestovani",
   "pelikan.cz": "cestovani",
   "hotels.com": "cestovani",

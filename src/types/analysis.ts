@@ -82,7 +82,7 @@ export interface AnalysisResult {
 
   platby?: {
     metody: string[];
-    ma_dobirku: boolean;
+    ma_dobirku: boolean | null;
     skryte_poplatky: string[];
     sankce_nevyzvedni: string | null;
     ceny_vcetne_dph: boolean | null;

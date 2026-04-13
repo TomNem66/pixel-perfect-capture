@@ -188,7 +188,7 @@ const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["r
 const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> }) => {
   const rows = [
     { key: "metody", label: "Platební metody", value: platby.metody.length > 0 ? platby.metody.join(", ") : null, rawValue: platby.metody },
-    { key: "ma_dobirku", label: "Dobírka", value: platby.ma_dobirku ? "Ano" : "Ne", rawValue: platby.ma_dobirku },
+    ...(platby.ma_dobirku !== null ? [{ key: "ma_dobirku", label: "Dobírka", value: platby.ma_dobirku ? "Ano" : "Ne", rawValue: platby.ma_dobirku }] : []),
     { key: "skryte_poplatky", label: "Skryté poplatky", value: platby.skryte_poplatky.length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné", variant: (platby.skryte_poplatky.length > 0 ? "warning" : undefined) as "warning" | undefined, rawValue: platby.skryte_poplatky },
     { key: "sankce_nevyzvedni", label: "Sankce za nevyzvednutí", value: platby.sankce_nevyzvedni || "Žádné", variant: (platby.sankce_nevyzvedni ? "warning" : undefined) as "warning" | undefined, tooltip: platby.sankce_nevyzvedni ? "smluvní pokuta" : undefined, rawValue: platby.sankce_nevyzvedni },
   ];
