@@ -230,11 +230,19 @@ async function fetchHomepage(url: string): Promise<{ html: string; text: string 
       redirect: "follow",
     });
     clearTimeout(timeout);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // Try ScraperAPI for homepage
+      const scraperText = await fetchViaScraperApi(url);
+      if (scraperText) return { html: "", text: scraperText };
+      return null;
+    }
     const html = await response.text();
     const text = stripHtml(html);
     return { html, text };
   } catch {
+    // Try ScraperAPI as last resort
+    const scraperText = await fetchViaScraperApi(url);
+    if (scraperText) return { html: "", text: scraperText };
     return null;
   }
 }
