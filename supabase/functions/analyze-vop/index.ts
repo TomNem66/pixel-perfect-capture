@@ -24,7 +24,8 @@ serve(async (req) => {
     }
 
     const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    console.log("Using Anthropic Claude API, key available:", !!API_KEY);
+    const AI_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+    console.log("Using Anthropic Claude API, key available:", !!API_KEY, "model:", AI_MODEL);
     if (!API_KEY) {
       return new Response(JSON.stringify({ error: "Anthropic API klíč není nakonfigurován" }), {
         status: 200,
@@ -52,7 +53,7 @@ serve(async (req) => {
     const systemPrompt = buildSystemPrompt(legalTexts);
     const userPrompt = buildUserPrompt(pages, forcedCategory);
 
-    const aiResponse = await callAI(API_KEY, systemPrompt, userPrompt);
+    const aiResponse = await callAI(API_KEY, AI_MODEL, systemPrompt, userPrompt);
 
     if (!aiResponse) {
       return new Response(JSON.stringify({ error: "ai_error" }), {
@@ -74,6 +75,7 @@ serve(async (req) => {
           console.log("Retrying AI with stricter prompt...");
           const retryResponse = await callAI(
             API_KEY,
+            AI_MODEL,
             systemPrompt,
             userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu."
           );
@@ -124,6 +126,7 @@ serve(async (req) => {
 
 async function callAI(
   apiKey: string,
+  model: string,
   systemPrompt: string,
   userPrompt: string,
   retryCount = 0
@@ -137,7 +140,7 @@ async function callAI(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model,
         max_tokens: 8192,
         temperature: 0,
         system: systemPrompt,
@@ -152,7 +155,7 @@ async function callAI(
       console.error("Claude API error:", response.status, errText);
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
-        return callAI(apiKey, systemPrompt, userPrompt, 1);
+        return callAI(apiKey, model, systemPrompt, userPrompt, 1);
       }
       return null;
     }
@@ -163,7 +166,7 @@ async function callAI(
     console.error("Claude API fetch error:", e);
     if (retryCount === 0) {
       await new Promise((r) => setTimeout(r, 2000));
-      return callAI(apiKey, systemPrompt, userPrompt, 1);
+      return callAI(apiKey, model, systemPrompt, userPrompt, 1);
     }
     return null;
   }
