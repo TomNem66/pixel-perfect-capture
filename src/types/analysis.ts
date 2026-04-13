@@ -170,6 +170,8 @@ export interface AnalysisResult {
     _citace?: CitaceMap;
   };
 
+  _lowData?: boolean;
+
   varovani: Array<{
     kategorie: string;
     text: string;
