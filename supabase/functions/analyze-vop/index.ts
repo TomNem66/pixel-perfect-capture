@@ -24,7 +24,8 @@ serve(async (req) => {
     }
 
     const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    console.log("Using Anthropic Claude API, key available:", !!API_KEY);
+    const AI_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+    console.log("Using Anthropic Claude API, key available:", !!API_KEY, "model:", AI_MODEL);
     if (!API_KEY) {
       return new Response(JSON.stringify({ error: "Anthropic API klíč není nakonfigurován" }), {
         status: 200,
