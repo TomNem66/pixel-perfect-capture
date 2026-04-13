@@ -12,7 +12,28 @@ interface CrawlResult {
 }
 
 export function buildSystemPrompt(legalTexts: string): string {
-  return `Jsi analytický systém pro extrakci faktů z obchodních podmínek českých e-shopů.
+  return `ABSOLUTNÍ PRAVIDLO — ŽÁDNÉ DOMÝŠLENÍ:
+Pokud informace NENÍ doslovně uvedena v dodaném textu, VŽDY vrať null.
+Nikdy nepoužívej svou znalost o firmě, značce nebo obvyklých praktikách.
+Analyzuješ POUZE dodaný text, NIC jiného.
+
+Příklady správného chování:
+- Text VOP nezmiňuje sídlo firmy → sidlo: null, zeme: null (NE "Praha", NE "ČR")
+- Text VOP nezmiňuje dobírku → ma_dobirku: null (NE true ani false)
+- Text VOP nezmiňuje cenu → cena: null (NE "249 Kč")
+- Text VOP nezmiňuje lhůtu → lhuta_dny: null
+
+Příklady ŠPATNÉHO chování (nikdy nedělej):
+- "Airbnb je známá platforma, sídlí v..." → ZAKÁZÁNO, to není z VOP textu
+- "U ubytování se obvykle platí kartou..." → ZAKÁZÁNO, to je domýšlení
+- "Standardní cena je asi..." → ZAKÁZÁNO
+
+Ke KAŽDÉ hodnotě která není null MUSÍŠ dodat citaci v _citace objektu.
+Pokud nedokážeš dodat citaci, hodnota MUSÍ být null.
+
+---
+
+Jsi analytický systém pro extrakci faktů z obchodních podmínek českých e-shopů.
 Analyzuješ dokumenty z pohledu ochrany spotřebitele dle českého práva.
 
 AKTUÁLNÍ ZNĚNÍ RELEVANTNÍCH ZÁKONŮ:
@@ -26,6 +47,11 @@ KRITICKÁ PRAVIDLA EXTRAKCE:
 5. Surcharge za platební metodu uváděj POUZE pokud je v textu explicitní číslo.
 6. Výjimky z vrácení uváděj POUZE pokud jsou v textu explicitně vyjmenovány.
 7. IČO, sídlo, zápis v OR — extrahuj POUZE pokud jsou přímo v analyzovaných textech.
+
+DETEKCE KATEGORIE:
+- Ubytovací platformy (Airbnb, Booking) = "cestovani", NE marketplace
+- Fitka, coworkingy, členské kluby = "predplatne"
+- Marketplace je JEN pokud platforma zprostředkovává prodej ZBOŽÍ od více prodejců (Amazon, Temu apod.)
 
 SPECIFIKA DLE KATEGORIE:
 - marketplace: zaměř se na to, kdo nese odpovědnost (platforma vs. prodejce)
@@ -59,6 +85,8 @@ Na základě extrahovaných faktů generuj pole "varovani" s automatickými varo
 - dodaci_lhuta_dny > 30 → zavaznost "pozor", text o dlouhé dodací lhůtě
 - sankce_nevyzvedni !== null → zavaznost "pozor", text o pokutě
 - reklamace_v_zahranici === true → zavaznost "pozor", text o zahraniční reklamaci
+- automaticke_obnoveni === true → zavaznost "pozor", text "Předplatné se automaticky obnovuje"
+- trial_automaticky_placeny === true → zavaznost "pozor", text "Po zkušební době se automaticky začne platit"
 
 GENEROVÁNÍ BONUSŮ:
 - lhuta_dny > 14 → bonus "Prodloužená lhůta na vrácení"
@@ -100,11 +128,13 @@ export function buildUserPrompt(pages: CrawlResult, forcedCategory?: string): st
 
   prompt += `
 
+PŘIPOMENUTÍ: Pokud informace NENÍ v textu výše, vrať null. NIKDY nedomýšlej.
+
 Vrať JSON s touto strukturou:
 {
   "siteName": "název e-shopu",
   "kategorie": "jedna z 9 kategorií",
-  "kategorie_label": "český název kategorie",
+  "kategorie_label": "český název kategorie s diakritikou",
   "kategorie_confidence": 0.0-1.0,
   "kategorie_duvod": "krátké zdůvodnění max 80 znaků",
   "trustRating": "ok" | "obezretni" | "riziko",
@@ -131,7 +161,7 @@ Vrať JSON s touto strukturou:
   // Sekce dle kategorie (pouze relevantní):
   "vraceni": { "lhuta_dny": number|null, "kdo_plati_postovne": "zákazník"|"e-shop"|"neuvedeno", "vyjimky": string[], "sankce": string|null, "lhuta_vraceni_penez_dny": number|null, "_citace": {...} } | undefined,
   "reklamace": { "zarucni_doba_mesice": number|null, "adresa_reklamace": string|null, "reklamace_v_zahranici": boolean, "sberne_misto_cr": boolean|null, "hradi_dopravu_vadneho": boolean|null, "lhuta_vyrizeni_dny": number|null, "lhuta_vraceni_penez_dny": number|null, "_citace": {...} } | undefined,
-  "platby": { "metody": string[], "ma_dobirku": boolean, "skryte_poplatky": string[], "sankce_nevyzvedni": string|null, "ceny_vcetne_dph": boolean|null, "_citace": {...} } | undefined,
+  "platby": { "metody": string[], "ma_dobirku": boolean|null, "skryte_poplatky": string[], "sankce_nevyzvedni": string|null, "ceny_vcetne_dph": boolean|null, "_citace": {...} } | undefined,
   "doprava": { "dodaci_lhuta_dny": number|null, "dodaci_lhuta_text": string|null, "zpusoby": string[], "odpovednost_poskozeni": string|null, "sledovani_zasilky": boolean|null, "_citace": {...} } | undefined,
   "storno": { "lze_stornovat": boolean|null, "lhuta_bezplatneho_storna": string|null, "poplatek_za_storno": string|null, "nevratna_rezervace": boolean|null, "castecne_storno": boolean|null, "_citace": {...} } | undefined,
   "predplatne_info": { "cena": string|null, "fakturacni_cyklus": string|null, "automaticke_obnoveni": boolean|null, "jak_zrusit": string|null, "vypovedni_lhuta": string|null, "vraci_pomernou_cast": boolean|null, "zkusebni_doba": string|null, "trial_automaticky_placeny": boolean|null, "zmena_ceny_predstih": string|null, "_citace": {...} } | undefined,

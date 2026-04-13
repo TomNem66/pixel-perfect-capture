@@ -86,7 +86,19 @@ const Index = () => {
         )}
 
         {step === "done" && result && (
-          <ResultsDashboard result={result} onReset={reset} onReanalyze={handleReanalyze} />
+          <>
+            {(result as any)._lowData && (
+              <div className="max-w-4xl mx-auto mb-6 rounded-xl border border-warning/30 bg-warning/5 p-4 text-center">
+                <p className="text-sm text-warning mb-3">
+                  Z podmínek tohoto webu se nepodařilo extrahovat dostatek informací. Podmínky mohou být příliš obecné nebo se nepodařilo správně stáhnout obsah stránky.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => { setFailedUrl(result.url); setManualDialogOpen(true); }}>
+                  Zadat URL podmínek ručně
+                </Button>
+              </div>
+            )}
+            <ResultsDashboard result={result} onReset={reset} onReanalyze={handleReanalyze} />
+          </>
         )}
       </div>
 

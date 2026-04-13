@@ -82,7 +82,7 @@ export interface AnalysisResult {
 
   platby?: {
     metody: string[];
-    ma_dobirku: boolean;
+    ma_dobirku: boolean | null;
     skryte_poplatky: string[];
     sankce_nevyzvedni: string | null;
     ceny_vcetne_dph: boolean | null;
@@ -169,6 +169,8 @@ export interface AnalysisResult {
     teplotni_retezec: string | null;
     _citace?: CitaceMap;
   };
+
+  _lowData?: boolean;
 
   varovani: Array<{
     kategorie: string;
