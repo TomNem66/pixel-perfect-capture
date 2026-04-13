@@ -15,7 +15,7 @@ function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<nav[\s\S]*?<\/nav>/gi, (match) => match) // keep nav for link discovery
+    .replace(/<nav[\s\S]*?<\/nav>/gi, (match) => match)
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -72,6 +72,20 @@ const FAQ_PATTERNS = [/faq/i, /casto[\s-]?kladene/i, /dotazy/i, /help/i, /napove
 const PRIVACY_PATTERNS = [/ochrana[\s-]?osobnich/i, /gdpr/i, /privacy/i, /soukromi/i, /zasady[\s-]?ochrany/i];
 const KONTAKT_PATTERNS = [/kontakt/i, /contact/i, /o[\s-]?nas/i, /about/i];
 
+// Patterns to detect if a page has meaningful content (not just a JS shell)
+const CONTENT_INDICATOR_PATTERNS = [
+  /obchodni/i, /podminky/i, /terms/i, /conditions/i, /vop/i,
+  /reklamac/i, /vraceni/i, /doprava/i, /platba/i, /kontakt/i,
+  /copyright/i, /cookies/i, /privacy/i, /gdpr/i,
+];
+
+function looksLikeJsRendered(text: string): boolean {
+  if (text.length < 500) return true;
+  const hasContentIndicator = CONTENT_INDICATOR_PATTERNS.some(p => p.test(text));
+  if (!hasContentIndicator) return true;
+  return false;
+}
+
 function findLinks(html: string, baseUrl: string): { href: string; text: string }[] {
   const links: { href: string; text: string }[] = [];
   const regex = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -87,7 +101,6 @@ function findLinks(html: string, baseUrl: string): { href: string; text: string 
 }
 
 function matchLink(links: { href: string; text: string }[], patterns: RegExp[]): string | null {
-  // First try matching text, then href
   for (const pattern of patterns) {
     const found = links.find((l) => pattern.test(l.text));
     if (found) return found.href;
@@ -99,11 +112,33 @@ function matchLink(links: { href: string; text: string }[], patterns: RegExp[]):
   return null;
 }
 
+async function fetchViaJina(url: string): Promise<string | null> {
+  try {
+    console.log("Falling back to Jina Reader for:", url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(`https://r.jina.ai/${url}`, {
+      headers: { Accept: "text/plain" },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!response.ok) {
+      console.warn(`Jina fetch failed: ${url} -> ${response.status}`);
+      return null;
+    }
+    const text = await response.text();
+    if (text.length < 100) return null;
+    return text.slice(0, 50000);
+  } catch (e) {
+    console.warn("Jina fetch error:", url, e);
+    return null;
+  }
+}
+
 async function fetchPage(url: string): Promise<CrawledPage | null> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-
     const response = await fetch(url, {
       headers: FETCH_HEADERS,
       signal: controller.signal,
@@ -113,14 +148,54 @@ async function fetchPage(url: string): Promise<CrawledPage | null> {
 
     if (!response.ok) {
       console.warn(`Page fetch failed: ${url} -> ${response.status}`);
+      // Try Jina as fallback for failed fetches
+      const jinaText = await fetchViaJina(url);
+      if (jinaText) return { url, text: jinaText };
       return null;
     }
     const html = await response.text();
     const text = stripHtml(html);
-    if (text.length < 100) return null;
+
+    // Check if the page looks JS-rendered (thin content)
+    if (looksLikeJsRendered(text)) {
+      console.log("Page appears JS-rendered, trying Jina:", url);
+      const jinaText = await fetchViaJina(url);
+      if (jinaText && jinaText.length > text.length) {
+        return { url, text: jinaText };
+      }
+    }
+
+    if (text.length < 100) {
+      // Last resort: try Jina
+      const jinaText = await fetchViaJina(url);
+      if (jinaText) return { url, text: jinaText };
+      return null;
+    }
     return { url, text };
   } catch (e) {
     console.warn(`Page fetch error: ${url}`, e);
+    // Try Jina as fallback for network errors
+    const jinaText = await fetchViaJina(url);
+    if (jinaText) return { url, text: jinaText };
+    return null;
+  }
+}
+
+async function fetchHomepage(url: string): Promise<{ html: string; text: string } | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(url, {
+      headers: FETCH_HEADERS,
+      signal: controller.signal,
+      redirect: "follow",
+    });
+    clearTimeout(timeout);
+    if (!response.ok) return null;
+    const html = await response.text();
+    const text = stripHtml(html);
+    return { html, text };
+  } catch {
     return null;
   }
 }
@@ -136,22 +211,39 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
     kontakt: null,
   };
 
-  // Fetch homepage
-  let homepageHtml: string;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(normalizedUrl, {
-      headers: FETCH_HEADERS,
-      signal: controller.signal,
-      redirect: "follow",
-    });
-    clearTimeout(timeout);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    homepageHtml = await response.text();
-  } catch (e) {
-    console.error("Failed to fetch homepage:", e);
-    // Try common VOP URLs directly
+  // Fetch homepage (direct fetch first, then Jina fallback)
+  let homepageData = await fetchHomepage(normalizedUrl);
+
+  // If direct fetch failed or looks JS-rendered, try Jina for homepage
+  if (!homepageData || looksLikeJsRendered(homepageData.text)) {
+    console.log("Homepage appears JS-rendered or failed, trying Jina Reader...");
+    const jinaText = await fetchViaJina(normalizedUrl);
+    if (jinaText && jinaText.length > (homepageData?.text?.length || 0)) {
+      // Jina returns plain text, we can still try to find links in it (markdown-style)
+      // But we also need the original HTML for link discovery if available
+      if (!homepageData) {
+        // No HTML at all — try common VOP URLs directly
+        const commonVopUrls = [
+          `${baseUrl}/obchodni-podminky`,
+          `${baseUrl}/vseobecne-obchodni-podminky`,
+          `${baseUrl}/terms`,
+          `${baseUrl}/podminky`,
+          `${baseUrl}/terms-and-conditions`,
+        ];
+        for (const vopUrl of commonVopUrls) {
+          const page = await fetchPage(vopUrl);
+          if (page) {
+            result.vop = page;
+            break;
+          }
+        }
+        return result;
+      }
+    }
+  }
+
+  if (!homepageData) {
+    // Complete failure — try common URLs
     const commonVopUrls = [
       `${baseUrl}/obchodni-podminky`,
       `${baseUrl}/vseobecne-obchodni-podminky`,
@@ -169,7 +261,7 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
     return result;
   }
 
-  const links = findLinks(homepageHtml, baseUrl);
+  const links = findLinks(homepageData.html, baseUrl);
 
   // Find relevant page URLs
   const vopUrl = matchLink(links, VOP_PATTERNS);
@@ -180,7 +272,7 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
 
   console.log("Found links:", { vop: vopUrl, reklamace: reklamaceUrl, faq: faqUrl, privacy: privacyUrl, kontakt: kontaktUrl });
 
-  // Fetch all found pages in parallel
+  // Fetch all found pages in parallel (each with built-in Jina fallback)
   const [vop, reklamacni_rad, faq, privacy, kontakt] = await Promise.all([
     vopUrl ? fetchPage(vopUrl) : Promise.resolve(null),
     reklamaceUrl ? fetchPage(reklamaceUrl) : Promise.resolve(null),
@@ -195,7 +287,7 @@ export async function crawlShopPages(inputUrl: string): Promise<CrawlResult> {
   result.privacy = privacy;
   result.kontakt = kontakt;
 
-  // If VOP not found via links, try common URL patterns including .htm variants
+  // If VOP not found via links, try common URL patterns
   if (!result.vop) {
     const commonVopUrls = [
       `${baseUrl}/obchodni-podminky`,
