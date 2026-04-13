@@ -58,8 +58,17 @@ export function useAnalysis() {
       });
       setStep("done");
     } catch (e) {
-      console.error("Edge function error:", e);
-      setError(e instanceof Error ? e.message : "Nepodařilo se analyzovat podmínky. Zkuste to prosím znovu.");
+      console.error("Analysis error:", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "vop_not_found") {
+        setError("vop_not_found");
+      } else if (msg.includes("Failed to send") || msg.includes("Edge Function") || msg.includes("FunctionsHttpError")) {
+        setError("Služba analýzy je momentálně nedostupná. Zkuste to prosím za chvíli.");
+      } else if (msg.includes("API klíč")) {
+        setError("API klíč není správně nakonfigurován. Kontaktujte správce.");
+      } else {
+        setError("Nepodařilo se analyzovat podmínky. Zkuste to prosím znovu.");
+      }
       setStep("error");
     }
   }, []);
