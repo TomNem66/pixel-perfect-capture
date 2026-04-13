@@ -112,6 +112,32 @@ function matchLink(links: { href: string; text: string }[], patterns: RegExp[]):
   return null;
 }
 
+async function fetchViaScraperApi(url: string): Promise<string | null> {
+  const scraperApiKey = Deno.env.get("SCRAPER_API_KEY");
+  if (!scraperApiKey) return null;
+  try {
+    console.log("Trying ScraperAPI for:", url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    const response = await fetch(
+      `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    if (!response.ok) {
+      console.warn(`ScraperAPI failed: ${url} -> ${response.status}`);
+      return null;
+    }
+    const html = await response.text();
+    const text = stripHtml(html);
+    if (text.length < 100) return null;
+    return text;
+  } catch (e) {
+    console.warn("ScraperAPI error:", url, e);
+    return null;
+  }
+}
+
 async function fetchViaJina(url: string): Promise<string | null> {
   try {
     console.log("Falling back to Jina Reader for:", url);
@@ -148,8 +174,11 @@ async function fetchPage(url: string): Promise<CrawledPage | null> {
 
     if (!response.ok) {
       console.warn(`Page fetch failed: ${url} -> ${response.status}`);
-      // Try Jina as fallback for failed fetches
       const jinaText = await fetchViaJina(url);
+      if (jinaText && !looksLikeJsRendered(jinaText)) return { url, text: jinaText };
+      // Last resort: ScraperAPI
+      const scraperText = await fetchViaScraperApi(url);
+      if (scraperText) return { url, text: scraperText };
       if (jinaText) return { url, text: jinaText };
       return null;
     }
@@ -160,23 +189,33 @@ async function fetchPage(url: string): Promise<CrawledPage | null> {
     if (looksLikeJsRendered(text)) {
       console.log("Page appears JS-rendered, trying Jina:", url);
       const jinaText = await fetchViaJina(url);
+      if (jinaText && jinaText.length > text.length && !looksLikeJsRendered(jinaText)) {
+        return { url, text: jinaText };
+      }
+      // Jina also failed — try ScraperAPI
+      const scraperText = await fetchViaScraperApi(url);
+      if (scraperText && scraperText.length > text.length) {
+        return { url, text: scraperText };
+      }
       if (jinaText && jinaText.length > text.length) {
         return { url, text: jinaText };
       }
     }
 
     if (text.length < 100) {
-      // Last resort: try Jina
       const jinaText = await fetchViaJina(url);
       if (jinaText) return { url, text: jinaText };
+      const scraperText = await fetchViaScraperApi(url);
+      if (scraperText) return { url, text: scraperText };
       return null;
     }
     return { url, text };
   } catch (e) {
     console.warn(`Page fetch error: ${url}`, e);
-    // Try Jina as fallback for network errors
     const jinaText = await fetchViaJina(url);
     if (jinaText) return { url, text: jinaText };
+    const scraperText = await fetchViaScraperApi(url);
+    if (scraperText) return { url, text: scraperText };
     return null;
   }
 }
@@ -191,11 +230,19 @@ async function fetchHomepage(url: string): Promise<{ html: string; text: string 
       redirect: "follow",
     });
     clearTimeout(timeout);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // Try ScraperAPI for homepage
+      const scraperText = await fetchViaScraperApi(url);
+      if (scraperText) return { html: "", text: scraperText };
+      return null;
+    }
     const html = await response.text();
     const text = stripHtml(html);
     return { html, text };
   } catch {
+    // Try ScraperAPI as last resort
+    const scraperText = await fetchViaScraperApi(url);
+    if (scraperText) return { html: "", text: scraperText };
     return null;
   }
 }

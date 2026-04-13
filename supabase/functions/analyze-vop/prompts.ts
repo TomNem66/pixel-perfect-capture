@@ -111,19 +111,19 @@ export function buildUserPrompt(pages: CrawlResult, forcedCategory?: string): st
   }
 
   if (pages.vop) {
-    prompt += `=== OBCHODNÍ PODMÍNKY (VOP) ===\nURL: ${pages.vop.url}\n${pages.vop.text.slice(0, 30000)}\n\n`;
+    prompt += `=== OBCHODNÍ PODMÍNKY (VOP) ===\nURL: ${pages.vop.url}\n${pages.vop.text.slice(0, 15000)}\n\n`;
   }
   if (pages.reklamacni_rad) {
-    prompt += `=== REKLAMAČNÍ ŘÁD ===\nURL: ${pages.reklamacni_rad.url}\n${pages.reklamacni_rad.text.slice(0, 15000)}\n\n`;
+    prompt += `=== REKLAMAČNÍ ŘÁD ===\nURL: ${pages.reklamacni_rad.url}\n${pages.reklamacni_rad.text.slice(0, 8000)}\n\n`;
   }
   if (pages.faq) {
-    prompt += `=== FAQ / ČASTÉ DOTAZY ===\nURL: ${pages.faq.url}\n${pages.faq.text.slice(0, 15000)}\n\n`;
+    prompt += `=== FAQ / ČASTÉ DOTAZY ===\nURL: ${pages.faq.url}\n${pages.faq.text.slice(0, 5000)}\n\n`;
   }
   if (pages.privacy) {
-    prompt += `=== OCHRANA OSOBNÍCH ÚDAJŮ ===\nURL: ${pages.privacy.url}\n${pages.privacy.text.slice(0, 10000)}\n\n`;
+    prompt += `=== OCHRANA OSOBNÍCH ÚDAJŮ ===\nURL: ${pages.privacy.url}\n${pages.privacy.text.slice(0, 3000)}\n\n`;
   }
   if (pages.kontakt) {
-    prompt += `=== KONTAKT / O NÁS ===\nURL: ${pages.kontakt.url}\n${pages.kontakt.text.slice(0, 5000)}\n\n`;
+    prompt += `=== KONTAKT / O NÁS ===\nURL: ${pages.kontakt.url}\n${pages.kontakt.text.slice(0, 2000)}\n\n`;
   }
 
   prompt += `
