@@ -24,7 +24,7 @@ serve(async (req) => {
     }
 
     const API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    const AI_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+    const AI_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-haiku-4-5";
     console.log("Using Anthropic Claude API, key available:", !!API_KEY, "model:", AI_MODEL);
     if (!API_KEY) {
       return new Response(JSON.stringify({ error: "Anthropic API klíč není nakonfigurován" }), {
@@ -77,7 +77,7 @@ serve(async (req) => {
             API_KEY,
             AI_MODEL,
             systemPrompt,
-            userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu."
+            userPrompt + "\n\nDŮLEŽITÉ: Odpověz POUZE validním JSON, bez jakéhokoli dalšího textu.",
           );
           if (retryResponse) {
             try {
@@ -117,10 +117,10 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("analyze-vop error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Neznámá chyba" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Neznámá chyba" }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 
@@ -129,7 +129,7 @@ async function callAI(
   model: string,
   systemPrompt: string,
   userPrompt: string,
-  retryCount = 0
+  retryCount = 0,
 ): Promise<string | null> {
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -144,9 +144,7 @@ async function callAI(
         max_tokens: 8192,
         temperature: 0,
         system: systemPrompt,
-        messages: [
-          { role: "user", content: userPrompt },
-        ],
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
