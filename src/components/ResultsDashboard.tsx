@@ -35,7 +35,7 @@ const trustConfig: Record<TrustRating, { icon: string; label: string; className:
 };
 
 const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) => {
-  if (varovani.length === 0) return null;
+  if (!varovani || varovani.length === 0) return null;
   const critical = varovani.filter(v => v.zavaznost === "kritické");
   const warnings = varovani.filter(v => v.zavaznost === "pozor");
   const infos = varovani.filter(v => v.zavaznost === "info");
@@ -89,7 +89,7 @@ const WarningBanner = ({ varovani }: { varovani: AnalysisResult["varovani"] }) =
 };
 
 const BonusBanner = ({ bonusy }: { bonusy: AnalysisResult["bonusy"] }) => {
-  if (bonusy.length === 0) return null;
+  if (!bonusy || bonusy.length === 0) return null;
   return (
     <div className="rounded-xl border border-success/30 bg-success/5 p-4 mb-6">
       <h4 className="font-heading font-semibold text-success flex items-center gap-2 mb-2">
@@ -141,7 +141,7 @@ const VraceniCard = ({ vraceni }: { vraceni: NonNullable<AnalysisResult["vraceni
   const rows = [
     { key: "lhuta_dny", label: "Lhůta na vrácení", value: vraceni.lhuta_dny != null ? `${vraceni.lhuta_dny} dní` : null, variant: (vraceni.lhuta_dny != null && vraceni.lhuta_dny > 14 ? "bonus" : undefined) as "bonus" | undefined, compliance: (vraceni.lhuta_dny != null ? (vraceni.lhuta_dny > 14 ? "better" : "standard") : "unknown") as any, tooltip: "odstoupení od smlouvy", rawValue: vraceni.lhuta_dny },
     { key: "kdo_plati_postovne", label: "Poštovné při vrácení", value: vraceni.kdo_plati_postovne === "neuvedeno" ? null : `hradí ${vraceni.kdo_plati_postovne}`, variant: (vraceni.kdo_plati_postovne === "e-shop" ? "bonus" : undefined) as "bonus" | undefined, rawValue: vraceni.kdo_plati_postovne },
-    { key: "vyjimky", label: "Výjimky z vrácení", value: vraceni.vyjimky.length > 0 ? vraceni.vyjimky.join(", ") : "Žádné speciální výjimky", rawValue: vraceni.vyjimky },
+    { key: "vyjimky", label: "Výjimky z vrácení", value: (vraceni.vyjimky ?? []).length > 0 ? vraceni.vyjimky.join(", ") : "Žádné speciální výjimky", rawValue: vraceni.vyjimky ?? [] },
     { key: "sankce", label: "Sankce za vrácení", value: vraceni.sankce || "Žádné", variant: (vraceni.sankce ? "warning" : undefined) as "warning" | undefined, rawValue: vraceni.sankce },
     { key: "lhuta_vraceni_penez_dny", label: "Vrácení peněz", value: vraceni.lhuta_vraceni_penez_dny != null ? `do ${vraceni.lhuta_vraceni_penez_dny} dní` : null, rawValue: vraceni.lhuta_vraceni_penez_dny },
   ];
@@ -187,9 +187,9 @@ const ReklamaceCard = ({ reklamace }: { reklamace: NonNullable<AnalysisResult["r
 // Per spec 3.1: don't show ceny_vcetne_dph (always true in CZ, legal requirement)
 const PlatbyCard = ({ platby }: { platby: NonNullable<AnalysisResult["platby"]> }) => {
   const rows = [
-    { key: "metody", label: "Platební metody", value: platby.metody.length > 0 ? platby.metody.join(", ") : null, rawValue: platby.metody },
+    { key: "metody", label: "Platební metody", value: (platby.metody ?? []).length > 0 ? platby.metody.join(", ") : null, rawValue: platby.metody ?? [] },
     ...(platby.ma_dobirku !== null ? [{ key: "ma_dobirku", label: "Dobírka", value: platby.ma_dobirku ? "Ano" : "Ne", rawValue: platby.ma_dobirku }] : []),
-    { key: "skryte_poplatky", label: "Skryté poplatky", value: platby.skryte_poplatky.length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné", variant: (platby.skryte_poplatky.length > 0 ? "warning" : undefined) as "warning" | undefined, rawValue: platby.skryte_poplatky },
+    { key: "skryte_poplatky", label: "Skryté poplatky", value: (platby.skryte_poplatky ?? []).length > 0 ? platby.skryte_poplatky.join(", ") : "Žádné", variant: ((platby.skryte_poplatky ?? []).length > 0 ? "warning" : undefined) as "warning" | undefined, rawValue: platby.skryte_poplatky ?? [] },
     { key: "sankce_nevyzvedni", label: "Sankce za nevyzvednutí", value: platby.sankce_nevyzvedni || "Žádné", variant: (platby.sankce_nevyzvedni ? "warning" : undefined) as "warning" | undefined, tooltip: platby.sankce_nevyzvedni ? "smluvní pokuta" : undefined, rawValue: platby.sankce_nevyzvedni },
   ];
 
@@ -211,7 +211,7 @@ const DopravaCard = ({ doprava }: { doprava: NonNullable<AnalysisResult["doprava
   // Per spec 3.1: odpovednost_poskozeni shown only as warning if risk transfers before physical receipt
   const rows = [
     { key: "dodaci_lhuta_dny", label: "Dodací lhůta", value: doprava.dodaci_lhuta_dny != null ? `${doprava.dodaci_lhuta_dny} dní` : (doprava.dodaci_lhuta_text || null), variant: (doprava.dodaci_lhuta_dny != null && doprava.dodaci_lhuta_dny > 30 ? "warning" : undefined) as "warning" | undefined, rawValue: doprava.dodaci_lhuta_dny },
-    { key: "zpusoby", label: "Způsoby dopravy", value: doprava.zpusoby.length > 0 ? doprava.zpusoby.join(", ") : null, rawValue: doprava.zpusoby },
+    { key: "zpusoby", label: "Způsoby dopravy", value: (doprava.zpusoby ?? []).length > 0 ? doprava.zpusoby.join(", ") : null, rawValue: doprava.zpusoby ?? [] },
     { key: "sledovani_zasilky", label: "Sledování zásilky", value: doprava.sledovani_zasilky === true ? "Ano" : doprava.sledovani_zasilky === false ? "Ne" : null, rawValue: doprava.sledovani_zasilky },
   ];
 
@@ -337,9 +337,9 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
       </div>
 
       {/* Banners */}
-      <WarningBanner varovani={result.varovani} />
+      <WarningBanner varovani={result.varovani ?? []} />
       <NesouladyBanner nesoulady={result.nesoulady} />
-      <BonusBanner bonusy={result.bonusy} />
+      <BonusBanner bonusy={result.bonusy ?? []} />
 
       {/* Dynamic Cards */}
       <div className="grid gap-4">
@@ -347,14 +347,14 @@ export const ResultsDashboard = ({ result, onReset, onReanalyze }: ResultsDashbo
       </div>
 
       {/* Legal References */}
-      {result.pravni_odkazy.length > 0 && (
+      {(result.pravni_odkazy ?? []).length > 0 && (
         <div className="mt-8 rounded-xl border border-border/60 bg-card p-5">
           <div className="flex items-center gap-3 mb-4">
             <VopIcon name="file-text" size={20} className="text-primary" />
             <h3 className="font-heading font-semibold text-lg">Právní odkazy</h3>
           </div>
           <div className="space-y-2">
-            {result.pravni_odkazy.map((ref, i) => (
+            {(result.pravni_odkazy ?? []).map((ref, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <a href={ref.url_esbirka} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   {ref.paragraf} {ref.zakon}
