@@ -4,18 +4,22 @@ import { HistoryList } from "@/components/HistoryList";
 import { LoadingState } from "@/components/LoadingState";
 import { ResultsDashboard } from "@/components/ResultsDashboard";
 import { ManualUrlDialog } from "@/components/ManualUrlDialog";
+import { ManualTextDialog } from "@/components/ManualTextDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { getHistory } from "@/lib/history";
 import { HistoryItem, ShopCategory } from "@/types/analysis";
 import { Button } from "@/components/ui/button";
 import { VopIcon } from "@/components/shared/VopIcon";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Index = () => {
-  const { step, result, error, analyze, reset } = useAnalysis();
+  const { step, result, error, diagnostics, analyze, analyzeRawText, reset } = useAnalysis();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [manualTextDialogOpen, setManualTextDialogOpen] = useState(false);
   const [failedUrl, setFailedUrl] = useState("");
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   useEffect(() => {
     setHistory(getHistory());
@@ -40,7 +44,27 @@ const Index = () => {
     handleAnalyze(termsUrl);
   };
 
+  const handleManualTextSubmit = (rawText: string, url: string) => {
+    setManualTextDialogOpen(false);
+    analyzeRawText(rawText, url).then(() => setHistory(getHistory()));
+  };
+
   const isLoading = !["idle", "done", "error"].includes(step);
+
+  const getErrorTitle = () => {
+    if (error === "vop_not_found") return "Obchodní podmínky nenalezeny";
+    if (error?.includes("blokují")) return "Web blokuje automatické čtení";
+    if (error?.includes("nedostupná") || error?.includes("nenalezena")) return "Stránka nedostupná";
+    if (error?.includes("přetížená")) return "Služba dočasně přetížená";
+    return "Nastala chyba";
+  };
+
+  const getErrorMessage = () => {
+    if (error === "vop_not_found") {
+      return "Nepodařilo se automaticky najít obchodní podmínky. Zkuste zadat URL podmínek ručně nebo vložte text podmínek.";
+    }
+    return error;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,22 +92,46 @@ const Index = () => {
           <div className="max-w-md mx-auto text-center py-16">
             <VopIcon name="circle-x" size={48} className="mx-auto mb-4" />
             <h2 className="text-xl font-heading font-bold mb-2">
-              {error === "vop_not_found" ? "Obchodní podmínky nenalezeny" : "Nastala chyba"}
+              {getErrorTitle()}
             </h2>
             <p className="text-muted-foreground mb-6">
-              {error === "vop_not_found"
-                ? "Nepodařilo se automaticky najít obchodní podmínky. Zkuste zadat URL podmínek ručně."
-                : error}
+              {getErrorMessage()}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
-              <Button variant="outline" onClick={reset}>Zpět na hlavní stránku</Button>
+              <Button variant="outline" onClick={reset}>Zpět</Button>
               {error !== "vop_not_found" && (
                 <Button variant="outline" onClick={() => handleAnalyze(failedUrl)}>Zkusit znovu</Button>
               )}
-              <Button onClick={() => setManualDialogOpen(true)}>
-                Zadat URL podmínek ručně
+              <Button variant="outline" onClick={() => setManualDialogOpen(true)}>
+                Zadat URL ručně
+              </Button>
+              <Button onClick={() => setManualTextDialogOpen(true)}>
+                Vložit text podmínek
               </Button>
             </div>
+
+            {/* Technical diagnostics toggle */}
+            {diagnostics && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowDiagnostics(!showDiagnostics)}
+                  className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                >
+                  Technické detaily
+                  {showDiagnostics ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+                {showDiagnostics && (
+                  <div className="mt-2 p-3 rounded-lg bg-muted/50 text-left text-xs font-mono text-muted-foreground max-w-sm mx-auto">
+                    {Object.entries(diagnostics).map(([key, value]) => (
+                      <div key={key}>
+                        <span className="text-foreground/60">{key}:</span>{" "}
+                        {String(value ?? "–")}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -94,9 +142,14 @@ const Index = () => {
                 <p className="text-sm text-warning mb-3">
                   Z podmínek tohoto webu se nepodařilo extrahovat dostatek informací. Podmínky mohou být příliš obecné nebo se nepodařilo správně stáhnout obsah stránky.
                 </p>
-                <Button variant="outline" size="sm" onClick={() => { setFailedUrl(result.url); setManualDialogOpen(true); }}>
-                  Zadat URL podmínek ručně
-                </Button>
+                <div className="flex gap-2 justify-center flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => { setFailedUrl(result.url); setManualDialogOpen(true); }}>
+                    Zadat URL podmínek ručně
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => { setFailedUrl(result.url); setManualTextDialogOpen(true); }}>
+                    Vložit text podmínek
+                  </Button>
+                </div>
               </div>
             )}
             <ResultsDashboard result={result} onReset={reset} onReanalyze={handleReanalyze} />
@@ -109,6 +162,12 @@ const Index = () => {
         onOpenChange={setManualDialogOpen}
         originalUrl={failedUrl}
         onSubmit={handleManualSubmit}
+      />
+      <ManualTextDialog
+        open={manualTextDialogOpen}
+        onOpenChange={setManualTextDialogOpen}
+        originalUrl={failedUrl}
+        onSubmit={handleManualTextSubmit}
       />
     </div>
   );
