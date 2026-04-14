@@ -9,38 +9,68 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function respond(data: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+
   try {
-    const { url, forcedCategory } = await req.json();
-    if (!url) {
-      return new Response(JSON.stringify({ error: "URL je povinné" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { url, forcedCategory, rawText } = await req.json();
+    if (!url && !rawText) {
+      return respond({ error: "URL nebo text je povinný", diagnostics: { error_stage: "validation" } });
     }
 
     const API_KEY = Deno.env.get("GEMINI_API_KEY");
     console.log("Using Google Gemini API, key available:", !!API_KEY);
     if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "Gemini API klíč není nakonfigurován" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respond({ error: "Gemini API klíč není nakonfigurován", diagnostics: { error_stage: "config" } });
     }
 
-    // Step 1: Crawl shop pages
-    console.log("Crawling:", url);
-    const pages = await crawlShopPages(url);
+    let pages: any = null;
+    let crawlDiagnostics: Record<string, unknown> = {};
 
-    if (!pages.vop) {
-      return new Response(JSON.stringify({ error: "vop_not_found" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (rawText) {
+      // User pasted text directly — skip crawling
+      console.log("Using raw text input, length:", rawText.length);
+      pages = {
+        vop: { url: url || "manual-input", text: rawText.slice(0, 50000) },
+        reklamacni_rad: null,
+        faq: null,
+        privacy: null,
+        kontakt: null,
+      };
+      crawlDiagnostics = { mode: "manual_text", text_length: rawText.length };
+    } else {
+      // Step 1: Crawl shop pages
+      console.log("Crawling:", url);
+      pages = await crawlShopPages(url);
+      crawlDiagnostics = {
+        mode: "crawl",
+        requested_url: url,
+        vop_found: !!pages.vop,
+        vop_url: pages.vop?.url || null,
+        processing_time_ms: Date.now() - startTime,
+      };
+
+      if (!pages.vop) {
+        return respond({
+          error: "vop_not_found",
+          diagnostics: {
+            ...crawlDiagnostics,
+            error_stage: "crawl",
+            detail: "Nepodařilo se najít stránku s obchodními podmínkami na zadané URL.",
+          },
+        });
+      }
     }
 
     // Step 2: Fetch legal texts
@@ -55,9 +85,13 @@ serve(async (req) => {
     const aiResponse = await callAI(API_KEY, systemPrompt, userPrompt);
 
     if (!aiResponse) {
-      return new Response(JSON.stringify({ error: "ai_error" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return respond({
+        error: "Služba AI je momentálně přetížená. Zkuste to prosím za chvíli.",
+        diagnostics: {
+          ...crawlDiagnostics,
+          error_stage: "ai_call",
+          processing_time_ms: Date.now() - startTime,
+        },
       });
     }
 
@@ -90,14 +124,18 @@ serve(async (req) => {
     }
 
     if (!analysis) {
-      return new Response(JSON.stringify({ error: "ai_invalid_json" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return respond({
+        error: "AI vrátila neplatnou odpověď. Zkuste to prosím znovu.",
+        diagnostics: {
+          ...crawlDiagnostics,
+          error_stage: "ai_parse",
+          processing_time_ms: Date.now() - startTime,
+        },
       });
     }
 
     // Enrich with metadata
-    analysis.url = url;
+    analysis.url = url || "manual-input";
     analysis.analyzedAt = new Date().toISOString();
     analysis.pravni_texty_stazeny = legalSuccess;
 
@@ -109,15 +147,16 @@ serve(async (req) => {
       privacy_url: pages.privacy?.url || null,
     };
 
-    return new Response(JSON.stringify(analysis), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return respond(analysis);
   } catch (e) {
     console.error("analyze-vop error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Neznámá chyba" }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = e instanceof Error ? e.message : "Neznámá chyba";
+    return respond({
+      error: msg,
+      diagnostics: {
+        error_stage: "unhandled",
+        processing_time_ms: Date.now() - startTime,
+      },
     });
   }
 });
@@ -154,13 +193,11 @@ async function callAI(
       const errText = await response.text();
       console.error(`Gemini API error (${model}):`, response.status, errText);
 
-      // On 503/429, try fallback model first
       if ((response.status === 503 || response.status === 429) && modelIndex < MODELS.length - 1) {
         console.log(`Falling back to ${MODELS[modelIndex + 1]}...`);
         return callAI(apiKey, systemPrompt, userPrompt, modelIndex + 1, 0);
       }
 
-      // Retry same model on 5xx
       if (retryCount === 0 && response.status >= 500) {
         await new Promise((r) => setTimeout(r, 2000));
         return callAI(apiKey, systemPrompt, userPrompt, modelIndex, 1);
