@@ -154,20 +154,17 @@ interface HeroBackgroundProps {
   animated?: boolean;
 }
 
-export const HeroBackground = ({ animated = false }: HeroBackgroundProps) => {
+export const HeroBackground = ({ animated = true }: HeroBackgroundProps) => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.10] via-background to-primary/[0.06] dark:from-primary/[0.12] dark:via-background dark:to-primary/[0.08]" />
-      {/* Radial teal glow — stronger in light mode */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/[0.12] dark:bg-primary/[0.10] rounded-full blur-3xl" />
-      {/* Corner vignettes */}
       <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-gradient-to-br from-primary/[0.10] to-transparent dark:from-primary/[0.08] dark:to-transparent" />
       <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-primary/[0.10] to-transparent dark:from-primary/[0.08] dark:to-transparent" />
       <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-primary/[0.06] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
       <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-gradient-to-tl from-primary/[0.06] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
 
-      <FallingIcons />
+      {animated ? <FallingIcons /> : <StaticIcons />}
     </div>
   );
 };
