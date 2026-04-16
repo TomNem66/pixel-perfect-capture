@@ -12,6 +12,7 @@ import { HistoryItem, ShopCategory } from "@/types/analysis";
 import { Button } from "@/components/ui/button";
 import { VopIcon } from "@/components/shared/VopIcon";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { HeroBackground } from "@/components/HeroBackground";
 
 const Index = () => {
   const { step, result, error, diagnostics, analyze, analyzeRawText, reset } = useAnalysis();
