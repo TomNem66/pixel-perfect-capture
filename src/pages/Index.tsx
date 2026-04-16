@@ -70,7 +70,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <ThemeToggle />
-      {step === "idle" && <HeroBackground />}
+      <HeroBackground animated={isLoading} />
       <div className="container mx-auto px-4 py-8 md:py-16 relative z-10">
         {step === "idle" && (
           <>
