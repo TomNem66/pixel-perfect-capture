@@ -167,9 +167,7 @@ export const HeroBackground = ({ animated = false }: HeroBackgroundProps) => {
       <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-primary/[0.06] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
       <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-gradient-to-tl from-primary/[0.06] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
 
-      {/* Always show falling icons + static ones */}
       <FallingIcons />
-      <StaticIcons />
     </div>
   );
 };
