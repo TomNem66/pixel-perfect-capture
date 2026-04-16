@@ -12,6 +12,7 @@ import { HistoryItem, ShopCategory } from "@/types/analysis";
 import { Button } from "@/components/ui/button";
 import { VopIcon } from "@/components/shared/VopIcon";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { HeroBackground } from "@/components/HeroBackground";
 
 const Index = () => {
   const { step, result, error, diagnostics, analyze, analyzeRawText, reset } = useAnalysis();
@@ -67,9 +68,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       <ThemeToggle />
-      <div className="container mx-auto px-4 py-8 md:py-16">
+      {step === "idle" && <HeroBackground />}
+      <div className="container mx-auto px-4 py-8 md:py-16 relative z-10">
         {step === "idle" && (
           <>
             <UrlInput onAnalyze={handleAnalyze} isLoading={false} />
