@@ -70,8 +70,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <ThemeToggle />
-      <HeroBackground animated={isLoading} />
-      <div className="container mx-auto px-4 py-8 md:py-16 relative z-10">
+      <HeroBackground />
+      <div className="container mx-auto px-4 pt-0 pb-8 md:pb-16 relative z-10">
         {step === "idle" && (
           <>
             <UrlInput onAnalyze={handleAnalyze} isLoading={false} />
