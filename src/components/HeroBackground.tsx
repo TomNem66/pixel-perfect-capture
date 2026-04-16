@@ -6,7 +6,7 @@ const FloatingIcon = ({
   className?: string;
 }) => (
   <div
-    className={`absolute text-primary/[0.08] dark:text-primary/[0.06] select-none pointer-events-none ${className}`}
+    className={`absolute text-primary/[0.12] dark:text-primary/[0.15] select-none pointer-events-none ${className}`}
   >
     {children}
   </div>
@@ -58,11 +58,15 @@ const ParagraphSymbol = ({ size = 40 }: { size?: number }) => (
 export const HeroBackground = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-accent/40 via-background to-accent/20 dark:from-primary/[0.06] dark:via-background dark:to-primary/[0.03]" />
-
-      {/* Subtle radial glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/[0.06] dark:bg-primary/[0.04] rounded-full blur-3xl" />
+      {/* Gradient background — darker edges fading to lighter center */}
+      <div className="absolute inset-0 bg-gradient-to-b from-accent/50 via-background to-accent/30 dark:from-primary/[0.12] dark:via-background dark:to-primary/[0.08]" />
+      {/* Radial glow in center for the "lighter middle" effect */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/[0.08] dark:bg-primary/[0.10] rounded-full blur-3xl" />
+      {/* Corner vignettes for darker edges */}
+      <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-gradient-to-br from-primary/[0.06] to-transparent dark:from-primary/[0.08] dark:to-transparent" />
+      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-primary/[0.06] to-transparent dark:from-primary/[0.08] dark:to-transparent" />
+      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-primary/[0.04] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
+      <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-gradient-to-tl from-primary/[0.04] to-transparent dark:from-primary/[0.06] dark:to-transparent" />
 
       {/* Floating decorative icons */}
       {/* Top left area */}
