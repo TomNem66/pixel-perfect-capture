@@ -116,24 +116,24 @@ const StaticIcons = () => (
 );
 
 // Falling icons configuration for loading animation
-// 16 icons with delays evenly spread across the 8s cycle for continuous flow
+// 16 icons with randomized positions and staggered delays
 const fallingIcons = [
-  { Icon: ParagraphSymbol, size: 28, left: "5%", delay: 0, rotate: 15 },
-  { Icon: ShieldIcon, size: 36, left: "15%", delay: 0.5, rotate: -10 },
-  { Icon: ParagraphSymbol, size: 22, left: "28%", delay: 1.0, rotate: 25 },
-  { Icon: ScaleIcon, size: 32, left: "42%", delay: 1.5, rotate: -20 },
-  { Icon: DocIcon, size: 30, left: "58%", delay: 2.0, rotate: 12 },
-  { Icon: ParagraphSymbol, size: 26, left: "72%", delay: 2.5, rotate: -8 },
-  { Icon: CheckCircleIcon, size: 28, left: "85%", delay: 3.0, rotate: 18 },
-  { Icon: GavelIcon, size: 34, left: "95%", delay: 3.5, rotate: -15 },
-  { Icon: ParagraphSymbol, size: 20, left: "10%", delay: 4.0, rotate: 10 },
-  { Icon: ShieldIcon, size: 30, left: "22%", delay: 4.5, rotate: -22 },
-  { Icon: ParagraphSymbol, size: 24, left: "35%", delay: 5.0, rotate: 5 },
-  { Icon: DocIcon, size: 28, left: "48%", delay: 5.5, rotate: -12 },
-  { Icon: ParagraphSymbol, size: 18, left: "62%", delay: 6.0, rotate: 20 },
-  { Icon: ScaleIcon, size: 26, left: "75%", delay: 6.5, rotate: -18 },
-  { Icon: CheckCircleIcon, size: 24, left: "88%", delay: 7.0, rotate: 8 },
-  { Icon: ParagraphSymbol, size: 22, left: "50%", delay: 7.5, rotate: -5 },
+  { Icon: ParagraphSymbol, size: 28, left: "3%", delay: 0, rotate: 15 },
+  { Icon: ShieldIcon, size: 36, left: "67%", delay: 0.5, rotate: -10 },
+  { Icon: ParagraphSymbol, size: 22, left: "31%", delay: 1.0, rotate: 25 },
+  { Icon: ScaleIcon, size: 32, left: "89%", delay: 1.5, rotate: -20 },
+  { Icon: DocIcon, size: 30, left: "14%", delay: 2.0, rotate: 12 },
+  { Icon: ParagraphSymbol, size: 26, left: "53%", delay: 2.5, rotate: -8 },
+  { Icon: CheckCircleIcon, size: 28, left: "78%", delay: 3.0, rotate: 18 },
+  { Icon: GavelIcon, size: 34, left: "41%", delay: 3.5, rotate: -15 },
+  { Icon: ParagraphSymbol, size: 20, left: "92%", delay: 4.0, rotate: 10 },
+  { Icon: ShieldIcon, size: 30, left: "7%", delay: 4.5, rotate: -22 },
+  { Icon: ParagraphSymbol, size: 24, left: "59%", delay: 5.0, rotate: 5 },
+  { Icon: DocIcon, size: 28, left: "24%", delay: 5.5, rotate: -12 },
+  { Icon: ParagraphSymbol, size: 18, left: "83%", delay: 6.0, rotate: 20 },
+  { Icon: ScaleIcon, size: 26, left: "46%", delay: 6.5, rotate: -18 },
+  { Icon: CheckCircleIcon, size: 24, left: "17%", delay: 7.0, rotate: 8 },
+  { Icon: ParagraphSymbol, size: 22, left: "71%", delay: 7.5, rotate: -5 },
 ];
 
 const FallingIcons = () => (
