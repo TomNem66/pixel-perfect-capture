@@ -28,7 +28,7 @@ export const UrlInput = ({ onAnalyze, isLoading }: UrlInputProps) => {
       </h1>
 
       <p className="text-xs font-heading tracking-[0.25em] uppercase text-primary/50 mb-4">
-        Analyzátor obchodních podmínek
+        Přečteme to za vás
       </p>
 
       <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto">
