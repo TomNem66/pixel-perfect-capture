@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { AnalysisResult, ShopCategory } from "@/types/analysis";
 import { addToHistory } from "@/lib/history";
 import { supabase } from "@/integrations/supabase/client";
+import { getMockForUrl } from "@/lib/mockAnalyses";
 
 type Step = "idle" | "fetching" | "parsing" | "analyzing" | "processing" | "done" | "error";
 
