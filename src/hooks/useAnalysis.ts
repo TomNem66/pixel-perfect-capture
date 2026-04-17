@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { AnalysisResult, ShopCategory } from "@/types/analysis";
 import { addToHistory } from "@/lib/history";
 import { supabase } from "@/integrations/supabase/client";
+import { getMockForUrl } from "@/lib/mockAnalyses";
 
 type Step = "idle" | "fetching" | "parsing" | "analyzing" | "processing" | "done" | "error";
 
@@ -30,6 +31,32 @@ export function useAnalysis() {
 
     try {
       setStep("fetching");
+
+      // Demo/Mock mode for investor presentations — bypass backend entirely
+      const mock = getMockForUrl(url);
+      if (mock) {
+        await delay(400);
+        setStep("parsing");
+        await delay(350);
+        setStep("analyzing");
+        await delay(450);
+        setStep("processing");
+        await delay(300);
+
+        const analysis = {
+          ...mock,
+          url,
+          analyzedAt: new Date().toISOString(),
+          zdroje: { vop_url: null, faq_url: null, reklamacni_rad_url: null, kontakt_url: null, privacy_url: null },
+          pravni_odkazy: [],
+          pravni_texty_stazeny: true,
+        } as AnalysisResult;
+
+        setResult(analysis);
+        addToHistory({ url: analysis.url, siteName: analysis.siteName, analyzedAt: analysis.analyzedAt });
+        setStep("done");
+        return;
+      }
 
       const { data, error: fnError } = await supabase.functions.invoke("analyze-vop", {
         body: { url, forcedCategory },
