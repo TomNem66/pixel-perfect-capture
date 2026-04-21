@@ -48,6 +48,21 @@ function resolveUrl(base: string, href: string): string {
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
+function isPublicUrl(input: string): boolean {
+  try {
+    const u = new URL(input);
+    if (!["http:", "https:"].includes(u.protocol)) return false;
+    const h = u.hostname.toLowerCase();
+    if (
+      h === "localhost" || /^127\./.test(h) || /^10\./.test(h) ||
+      /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+      /^169\.254\./.test(h) || h.endsWith(".internal") || h.endsWith(".local") ||
+      /^\[/.test(h) || h === "0.0.0.0" || h === "[::1]"
+    ) return false;
+    return true;
+  } catch { return false; }
+}
+
 const FETCH_HEADERS = {
   "User-Agent": BROWSER_UA,
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -163,6 +178,7 @@ async function fetchViaJina(url: string): Promise<string | null> {
 
 async function fetchPage(url: string): Promise<CrawledPage | null> {
   try {
+    if (!isPublicUrl(url)) { console.warn("Blocked non-public URL:", url); return null; }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(url, {
@@ -222,6 +238,7 @@ async function fetchPage(url: string): Promise<CrawledPage | null> {
 
 async function fetchHomepage(url: string): Promise<{ html: string; text: string } | null> {
   try {
+    if (!isPublicUrl(url)) { console.warn("Blocked non-public URL:", url); return null; }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
     const response = await fetch(url, {

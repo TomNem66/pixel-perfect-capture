@@ -29,6 +29,11 @@ serve(async (req) => {
       return respond({ error: "URL nebo text je povinný", diagnostics: { error_stage: "validation" } });
     }
 
+    // SSRF protection: validate URL before processing
+    if (url && !isPublicUrl(url)) {
+      return respond({ error: "Neplatná URL adresa.", diagnostics: { error_stage: "validation" } }, 400);
+    }
+
     const API_KEY = Deno.env.get("GEMINI_API_KEY");
     console.log("Using Google Gemini API, key available:", !!API_KEY);
     if (!API_KEY) {
@@ -150,9 +155,8 @@ serve(async (req) => {
     return respond(analysis);
   } catch (e) {
     console.error("analyze-vop error:", e);
-    const msg = e instanceof Error ? e.message : "Neznámá chyba";
     return respond({
-      error: msg,
+      error: "Interní chyba. Zkuste to prosím znovu.",
       diagnostics: {
         error_stage: "unhandled",
         processing_time_ms: Date.now() - startTime,
@@ -160,6 +164,30 @@ serve(async (req) => {
     });
   }
 });
+
+function isPublicUrl(input: string): boolean {
+  try {
+    const u = new URL(input.startsWith("http") ? input : `https://${input}`);
+    if (!["http:", "https:"].includes(u.protocol)) return false;
+    const h = u.hostname.toLowerCase();
+    if (
+      h === "localhost" ||
+      /^127\./.test(h) ||
+      /^10\./.test(h) ||
+      /^192\.168\./.test(h) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+      /^169\.254\./.test(h) ||
+      h.endsWith(".internal") ||
+      h.endsWith(".local") ||
+      /^\[/.test(h) ||
+      h === "0.0.0.0" ||
+      h === "[::1]"
+    ) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
