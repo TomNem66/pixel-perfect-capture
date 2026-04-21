@@ -328,7 +328,7 @@ const mockCineStar: MockData = {
 
 const mockRegioJet: MockData = {
   siteName: "RegioJet",
-  kategorie: "jizdenky_doprava",
+  kategorie: "doprava_jizdenky",
   kategorie_label: "Dopravní jízdenky",
   kategorie_confidence: 0.99,
   kategorie_duvod: "Prodej jízdenek na vlakové a autobusové spoje s konkrétním datem a časem odjezdu.",
@@ -365,16 +365,15 @@ const mockRegioJet: MockData = {
     { kategorie: "SMS storno", text: "Jízdenku lze stornovat i SMS zprávou bez přístupu k internetu." },
     { kategorie: "Kompenzace zpoždění", text: "Při zpoždění nad 90 minut RegioJet vrátí celou cenu jízdenky. Při zpoždění 31–90 minut (spoje do 1,5 h) vrátí 25 %." },
   ],
-  akce_zruseni: {
-    vraceni_pri_zruseni: "Online: storno zdarma, vrácení na Smile účet do 4 dnů nebo na platební kartu do 3–5 dnů. Pokladní jízdenky: storno poplatek 10 %.",
-    vraceni_pri_presunuti: "Přerezervace možná online přes storno a novou rezervaci.",
-    lhuta_vraceni: "Nejpozději 15 minut před odjezdem spoje",
-    voucher_misto_penez: false,
-    prevod_na_jinou_osobu: false,
-    preprodej: false,
+  storno: {
+    lze_stornovat: true,
+    lhuta_bezplatneho_storna: "do 15 minut před odjezdem (online jízdenky zdarma)",
+    poplatek_za_storno: "online: 0 Kč; pokladní jízdenky: 10 % z ceny; akční jízdenky: až 100 %",
+    nevratna_rezervace: false,
+    castecne_storno: false,
     _citace: {
-      lhuta_vraceni: "Vrácení jízdenky lze provést bezplatně online nejpozději 15 minut před odjezdem spoje z dané zastávky dle JŘ.",
-      vraceni_pri_zruseni: "Jízdenky vytvořené online na www.regiojet.cz či přes mobilní aplikaci lze stornovat zdarma.",
+      lhuta_bezplatneho_storna: "Vrácení jízdenky lze provést bezplatně online nejpozději 15 minut před odjezdem spoje z dané zastávky dle JŘ.",
+      poplatek_za_storno: "Jízdenky vytvořené online na www.regiojet.cz či přes mobilní aplikaci lze stornovat zdarma.",
     },
   },
 } as unknown as MockData;
